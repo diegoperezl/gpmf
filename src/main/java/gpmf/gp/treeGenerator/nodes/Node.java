@@ -5,103 +5,108 @@ import gpmf.gp.treeGenerator.nodeSupport.NodeTool;
 
 public abstract class Node extends TreeElement {
 
-    private int nodeNumber;
-    private String nodeType;
-    private int offspring;
+  private int nodeNumber;
+  private String nodeType;
+  private int offspring;
 
-    private Node rightNode;
-    private Node leftNode;
-    private Leaf operator;
+  private Node rightNode;
+  private Node leftNode;
+  private Leaf operator;
 
-    private NodeTool nodeTool;
+  private NodeTool nodeTool;
 
-    private String[] binaryOperators = {"+", "-", "*", "pow"};
-    private String[] unaryOperators = {"cos", "sin", "atan", "exp", "log", "inv"};
-    private String[] comparisonOperators = {"<", ">", "<=", ">="};
-    private String[] multiOperators = {"&&", "||"};
+  private String[] binaryOperators = {"+", "-", "*", "pow"};
+  private String[] unaryOperators = {"cos", "sin", "atan", "exp", "log", "inv"};
+  private String[] comparisonOperators = {"<", ">", "<=", ">="};
+  private String[] multiOperators = {"&&", "||"};
 
+  public abstract void restructure(int depth);
 
-    public abstract void restructure(int depth);
-    public abstract String getNodeClass();
-    public abstract void expand();
+  public abstract String getNodeClass();
 
-    public String selectBinaryOperatorExpression(){
-        int operatorSelection = (int)Math.floor(Math.random()*binaryOperators.length);
-        return binaryOperators[operatorSelection];
-    }
+  public abstract void expand();
 
-    public String selectUnaryOperatorExpression(){
-        int operatorSelection = (int)Math.floor(Math.random()*unaryOperators.length);
-        return unaryOperators[operatorSelection];
-    }
+  public String selectBinaryOperatorExpression() {
+    int operatorSelection =
+        (int) Math.floor(this.nodeTool.getRandom().nextDouble() * binaryOperators.length);
+    return binaryOperators[operatorSelection];
+  }
 
-    public String selectComparisonOperatorExpression(){
-        int operatorSelection = (int)Math.floor(Math.random()*comparisonOperators.length);
-        return comparisonOperators[operatorSelection];
-    }
+  public String selectUnaryOperatorExpression() {
+    int operatorSelection =
+        (int) Math.floor(this.nodeTool.getRandom().nextDouble() * unaryOperators.length);
+    return unaryOperators[operatorSelection];
+  }
 
-    public String selectMultiOperatorExpression(){
-        int operatorSelection = (int)Math.floor(Math.random()*multiOperators.length);
-        return multiOperators[operatorSelection];
-    }
+  public String selectComparisonOperatorExpression() {
+    int operatorSelection =
+        (int) Math.floor(this.nodeTool.getRandom().nextDouble() * comparisonOperators.length);
+    return comparisonOperators[operatorSelection];
+  }
 
-    public void setNodeTool(NodeTool nodeTool){
-        this.nodeTool = nodeTool;
-    }
+  public String selectMultiOperatorExpression() {
+    int operatorSelection =
+        (int) Math.floor(this.nodeTool.getRandom().nextDouble() * multiOperators.length);
+    return multiOperators[operatorSelection];
+  }
 
-    public NodeTool getNodeTool(){
-        return this.nodeTool;
-    }
+  public void setNodeTool(NodeTool nodeTool) {
+    this.nodeTool = nodeTool;
+  }
 
-    public void setNodeNumber(int nodeNumber){
-        this.nodeNumber = nodeNumber;
-    }
+  public NodeTool getNodeTool() {
+    return this.nodeTool;
+  }
 
-    public int getNodeNumber(){
-        return this.nodeNumber;
-    }
+  public void setNodeNumber(int nodeNumber) {
+    this.nodeNumber = nodeNumber;
+  }
 
-    public void setNodeType(String nodeType){
-        this.nodeType = nodeType;
-    }
+  public int getNodeNumber() {
+    return this.nodeNumber;
+  }
 
-    public String getNodeType(){
-        return this.nodeType;
-    }
+  public void setNodeType(String nodeType) {
+    this.nodeType = nodeType;
+  }
 
-    public void setOffspring(int offspring){
-        this.offspring = offspring;
-    }
+  public String getNodeType() {
+    return this.nodeType;
+  }
 
-    public int getOffspring(){
-        return this.offspring;
-    }
+  public void setOffspring(int offspring) {
+    this.offspring = offspring;
+  }
 
-    public void setRightNode(Node node){
-        this.rightNode = node;
-    }
+  public int getOffspring() {
+    return this.offspring;
+  }
 
-    public Node getRightNode(){
-        return this.rightNode;
-    }
+  public void setRightNode(Node node) {
+    this.rightNode = node;
+  }
 
-    public void setLeftNode(Node node){
-        this.leftNode = node;
-    }
+  public Node getRightNode() {
+    return this.rightNode;
+  }
 
-    public Node getLeftNode(){
-        return this.leftNode;
-    }
+  public void setLeftNode(Node node) {
+    this.leftNode = node;
+  }
 
-    public void setOperator(Leaf operator){
-        this.operator = operator;
-    }
+  public Node getLeftNode() {
+    return this.leftNode;
+  }
 
-    public Leaf getOperator(){
-        return this.operator;
-    }
+  public void setOperator(Leaf operator) {
+    this.operator = operator;
+  }
 
-    public abstract void setNode(Node node, int nodeNumber);
+  public Leaf getOperator() {
+    return this.operator;
+  }
 
-    public abstract Node getNode(int nodeNumber);
+  public abstract void setNode(Node node, int nodeNumber);
+
+  public abstract Node getNode(int nodeNumber);
 }
