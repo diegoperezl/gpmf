@@ -28,7 +28,7 @@ public class DrawTree extends Application {
     double screenWidth = screenBounds.getMaxX();
     double screenHeight = screenBounds.getMaxY();
 
-    int[] silhouette = new int[200];
+    int[] silhouette = new int[treeInstance.getDepth()+1];
     for (int i = 0; i < silhouette.length; i++) silhouette[i] = 0;
 
     treeInstance.draw(canvas, 0, 0, 0, 50, silhouette);

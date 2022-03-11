@@ -1,11 +1,10 @@
 import es.upm.etsisi.cf4j.data.BenchmarkDataModels;
 import es.upm.etsisi.cf4j.data.DataModel;
-import es.upm.etsisi.cf4j.qualityMeasure.prediction.MSE;
+
 import es.upm.etsisi.cf4j.util.optimization.GridSearchCV;
 import es.upm.etsisi.cf4j.util.optimization.ParamsGrid;
-import es.upm.etsisi.cf4j.util.optimization.RandomSearch;
-import es.upm.etsisi.cf4j.util.optimization.RandomSearchCV;
 import gpmf.GPMF;
+import qualityMeasures.prediction.MSE;
 
 import java.io.IOException;
 
@@ -23,9 +22,11 @@ public class main {
     paramsGrid.addParam("pbmut", new double[] {0.4});
     paramsGrid.addParam("pbx", new double[] {1.0});
     paramsGrid.addParam("popSize", new int[] {80});
-    paramsGrid.addParam("numIters", new int[] {100});
-    paramsGrid.addParam("maxDepth", new int[] {6});
-    paramsGrid.addParam("maxNodes", new int[] {20});
+    paramsGrid.addParam("numIters", new int[] {2});
+    paramsGrid.addParam("maxDepthInit", new int[] {4});
+    paramsGrid.addParam("maxDepthFinal", new int[] {8});
+    paramsGrid.addParam("maxNodesInit", new int[] {5});
+    paramsGrid.addParam("maxNodesFinal", new int[] {100});
     paramsGrid.addParam("numChildren", new int[] {80});
 
     paramsGrid.addFixedParam("seed", 42L);

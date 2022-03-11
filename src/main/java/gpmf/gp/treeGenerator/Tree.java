@@ -6,28 +6,31 @@ import gpmf.gp.treeGenerator.nodes.Node;
 import gpmf.gp.treeGenerator.nodes.Statement;
 
 import java.util.HashMap;
+import java.util.Random;
 
 public class Tree {
 
+  private double score;
   private int maxDepth;
   private int numFactors;
   private int maxNodes;
   private Node root;
   private int offspring;
   private NodeTool nodeTool;
-  private long seed = System.currentTimeMillis();
+  private Random rand;
 
-  public Tree(int maxDepth, int numFactors, int maxNodes, long seed) {
+  public Tree(int maxDepth, int numFactors, int maxNodes, Random rand, double score) {
     this.setMaxDepth(maxDepth);
     this.setNumFactors(numFactors);
     this.setMaxNodes(maxNodes);
     this.setRoot(null);
     this.setOffspring(0);
-    this.seed = seed;
+    this.rand = rand;
+    this.score = score;
   }
 
   public void generateTree() {
-    this.nodeTool = new NodeTool(this.maxDepth, this.maxNodes, 0, this.numFactors, this.seed);
+    this.nodeTool = new NodeTool(this.maxDepth, this.maxNodes, 0, this.numFactors, this.rand);
     this.root = new Statement("AssignStmt", 0, root, nodeTool);
     root.expand();
     this.setOffspring(nodeTool.getCurrentNodeNumber());
@@ -41,11 +44,24 @@ public class Tree {
 
   public Tree clone() {
     Tree aux =
-        new Tree(this.getMaxDepth(), this.getNumFactors(), this.getMaxNodes(), this.getSeed());
+        new Tree(
+            this.getMaxDepth(), this.getNumFactors(), this.getMaxNodes(), this.rand, this.score);
     aux.setNodeTool(this.nodeTool.clone());
     aux.setOffspring(this.getOffspring());
     aux.setRoot((Node) this.getRoot().clone(aux.getNodeTool()));
     return aux;
+  }
+
+  public int getDepth() {
+    return this.nodeTool.getDepth();
+  }
+
+  public double getScore() {
+    return this.score;
+  }
+
+  public void setScore(double score) {
+    this.score = score;
   }
 
   public void setFactorsValues(double[] factorsValues) {
@@ -79,12 +95,12 @@ public class Tree {
     System.out.println(this.root.toString());
   }
 
-  public void setSeed(long seed) {
-    this.seed = seed;
+  public void setRand(Random rand) {
+    this.rand = rand;
   }
 
-  public long getSeed() {
-    return this.seed;
+  public Random getRand() {
+    return this.rand;
   }
 
   public void setMaxDepth(int maxDepth) {

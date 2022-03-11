@@ -213,6 +213,7 @@ public class Expression extends Node {
 
   @Override
   public void restructure(int depth) {
+    if (depth > super.getNodeTool().getDepth()) super.getNodeTool().setDepth(depth);
     this.setDepth(depth);
     this.setNodeNumber(this.getNodeTool().getCurrentNodeNumber());
 

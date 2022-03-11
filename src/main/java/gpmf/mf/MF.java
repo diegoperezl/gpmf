@@ -150,7 +150,9 @@ public class MF extends Recommender {
           int itemIndex = user.getItemAt(i);
 
           HashMap<String, Double> params = getParams(p[user.getUserIndex()], q[itemIndex]);
+
           treeInstance.reset();
+          treeInstance.restructure();
           treeInstance.setFactorsValues(params);
           String func = treeInstance.getPrefix();
 
@@ -217,6 +219,7 @@ public class MF extends Recommender {
     double prediction;
     HashMap<String, Double> params = getParams(this.p[userIndex], this.q[itemIndex]);
     treeInstance.reset();
+    treeInstance.restructure();
     treeInstance.setFactorsValues(params);
     String func = treeInstance.getPrefix();
     try {

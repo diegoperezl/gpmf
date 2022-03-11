@@ -1,21 +1,20 @@
 package gpmf;
 
 import es.upm.etsisi.cf4j.data.DataModel;
-import es.upm.etsisi.cf4j.qualityMeasure.prediction.MSE;
+
 import es.upm.etsisi.cf4j.recommender.Recommender;
 import gpmf.gp.treeGenerator.Tree;
 import gpmf.gp.treeGenerator.nodes.ConditionExpression;
 import gpmf.gp.treeGenerator.nodes.Expression;
 import gpmf.gp.treeGenerator.nodes.Node;
 import gpmf.gp.treeGenerator.nodes.Statement;
-import gpmf.gp.treeRepresentation.DrawTree;
 import gpmf.mf.MF;
+import qualityMeasures.prediction.MSE;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
 public class GPMF extends Recommender {
@@ -44,29 +43,39 @@ public class GPMF extends Recommender {
   /** Number of iterations */
   private final int numIters;
 
-  /** Max depth of trees */
-  private final int maxDepth;
+  /** Max initial depth of trees */
+  private final int maxDepthInit;
 
-  /** Max number of nodes of trees */
-  private final int maxNodes;
+  /** Max final depth of trees */
+  private final int maxDepthFinal;
+
+  /** Max initial number of nodes of trees */
+  private final int maxNodesInit;
+
+  /** Max final number of nodes of trees */
+  private final int maxNodesFinal;
 
   /** Number of children */
   private final int numChildren;
 
+  /** Random generator of the model */
+  private final Random rand;
+
   /** Seed of the model */
-  private final Random seed;
+  private final long seed;
 
   /** HashMap of population trees */
-  private HashMap<Integer, Tree> population = new HashMap<Integer, Tree>();
+  private Map<Integer, Tree> population = Collections.synchronizedMap(new HashMap<Integer, Tree>());
 
   /** HashMap of children trees */
-  private HashMap<Integer, Tree> children = new HashMap<Integer, Tree>();
+  private Map<Integer, Tree> children = Collections.synchronizedMap(new HashMap<Integer, Tree>());
 
   /** HashMap of population scores */
-  private HashMap<Integer, Double> scores = new HashMap<Integer, Double>();
+  private Map<Integer, Double> scores = Collections.synchronizedMap(new HashMap<Integer, Double>());
 
   /** HashMap of children scores */
-  private HashMap<Integer, Double> childrenScores = new HashMap<Integer, Double>();
+  private Map<Integer, Double> childrenScores =
+      Collections.synchronizedMap(new HashMap<Integer, Double>());
 
   /** MF instance of best tree */
   private volatile MF bestMF = null;
@@ -88,8 +97,10 @@ public class GPMF extends Recommender {
    *   <li><b>popSize</b>: int value with the population size.
    *   <li><b>numIters</b>: int value with the number of iterations.
    *   <li><b>numChildren</b>: int value with the number of children.
-   *   <li><b>maxDepth</b>: int value with the maximum depth of trees.
-   *   <li><b>maxNodes</b>: int value with the maximum number of nodes.
+   *   <li><b>maxDepthInit</b>: int value with the maximum initial depth of trees.
+   *   <li><b>maxDepthFinal</b>: int value with the maximum final depth of trees.
+   *   <li><b>maxNodesInit</b>: int value with the maximum initial number of nodes.
+   *   <li><b>maxNodesFinal</b>: int value with the maximum final number of nodes.
    *   <li><b><em>seed</em></b> (optional): random seed for random numbers generation. If missing,
    *       random value is used.
    * </ul>
@@ -109,8 +120,10 @@ public class GPMF extends Recommender {
         (int) params.get("popSize"),
         (int) params.get("numIters"),
         (int) params.get("numChildren"),
-        (int) params.get("maxDepth"),
-        (int) params.get("maxNodes"),
+        (int) params.get("maxDepthInit"),
+        (int) params.get("maxDepthFinal"),
+        (int) params.get("maxNodesInit"),
+        (int) params.get("maxNodesFinal"),
         params.containsKey("seed") ? (long) params.get("seed") : System.currentTimeMillis());
   }
 
@@ -127,8 +140,10 @@ public class GPMF extends Recommender {
    * @param popSize Population size
    * @param numIters Number of iterations
    * @param numChildren Number of children
-   * @param maxDepth Max depth of trees
-   * @param maxNodes Max nodes of trees
+   * @param maxDepthInit Max initial depth of trees
+   * @param maxDepthFinal Max final depth of trees
+   * @param maxNodesInit Max initial number of nodes
+   * @param maxNodesFinal Max final number of nodes
    */
   public GPMF(
       DataModel datamodel,
@@ -141,8 +156,10 @@ public class GPMF extends Recommender {
       int popSize,
       int numIters,
       int numChildren,
-      int maxDepth,
-      int maxNodes) {
+      int maxDepthInit,
+      int maxDepthFinal,
+      int maxNodesInit,
+      int maxNodesFinal) {
     this(
         datamodel,
         numFactors,
@@ -154,8 +171,10 @@ public class GPMF extends Recommender {
         popSize,
         numIters,
         numChildren,
-        maxDepth,
-        maxNodes,
+        maxDepthInit,
+        maxDepthFinal,
+        maxNodesInit,
+        maxNodesFinal,
         System.currentTimeMillis());
   }
 
@@ -172,8 +191,10 @@ public class GPMF extends Recommender {
    * @param popSize Population size
    * @param numIters Number of iterations
    * @param numChildren Number of children
-   * @param maxDepth Max depth of trees
-   * @param maxNodes Max nodes of trees
+   * @param maxDepthInit Max initial depth of trees
+   * @param maxDepthFinal Max final depth of trees
+   * @param maxNodesInit Max initial number of nodes
+   * @param maxNodesFinal Max final number of nodes
    */
   public GPMF(
       DataModel datamodel,
@@ -186,8 +207,10 @@ public class GPMF extends Recommender {
       int popSize,
       int numIters,
       int numChildren,
-      int maxDepth,
-      int maxNodes,
+      int maxDepthInit,
+      int maxDepthFinal,
+      int maxNodesInit,
+      int maxNodesFinal,
       long seed) {
 
     super(datamodel);
@@ -200,13 +223,16 @@ public class GPMF extends Recommender {
     this.popSize = popSize;
     this.numIters = numIters;
     this.numChildren = numChildren;
-    this.maxDepth = maxDepth;
-    this.maxNodes = maxNodes;
+    this.maxDepthInit = maxDepthInit;
+    this.maxDepthFinal = maxDepthFinal;
+    this.maxNodesInit = maxNodesInit;
+    this.maxNodesFinal = maxNodesFinal;
 
-    this.seed = new Random(seed);
+    this.rand = new Random(seed);
+    this.seed = seed;
 
     for (int i = 0; i < this.popSize; i++) {
-      population.put(i, new Tree(this.maxDepth, this.numFactors, this.maxNodes, seed));
+      population.put(i, new Tree(this.maxDepthInit, this.numFactors, this.maxNodesInit, this.rand, 0));
       population.get(i).generateTree();
     }
 
@@ -216,7 +242,7 @@ public class GPMF extends Recommender {
   }
 
   @Override
-  public double predict(int userIndex, int itemIndex) {
+  public synchronized double predict(int userIndex, int itemIndex) {
     return this.bestMF.predict(userIndex, itemIndex);
   }
 
@@ -237,7 +263,7 @@ public class GPMF extends Recommender {
       e.printStackTrace();
     }
 
-    System.out.println("Generation number: " + 0);
+    //System.out.println("Generation number: " + 0);
 
     try {
       this.trainGeneration();
@@ -276,8 +302,8 @@ public class GPMF extends Recommender {
         e.printStackTrace();
       }
 
-      System.out.println("Generation number " + i + " with best result: " + best);
-      System.out.println("Number of invalid children: " + this.invalidChildren);
+      System.out.print("\nGeneration number " + i + " with best result: " + best);
+      System.out.println(" | Number of invalid children: " + this.invalidChildren);
       this.invalidChildren = 0;
     }
 
@@ -293,7 +319,8 @@ public class GPMF extends Recommender {
             this.numFactors,
             this.numIters,
             this.regularization,
-            this.learningRate);
+            this.learningRate,
+            this.seed);
     this.bestMF.fit();
 
     try {
@@ -307,15 +334,15 @@ public class GPMF extends Recommender {
     int[] parents1 = new int[this.numChildren / 2];
     int[] parents2 = new int[this.numChildren / 2];
 
-    System.out.println("Selecting parents...");
+    //System.out.println("Selecting parents...");
     this.selectParents(parents1, parents2);
-    System.out.println("CrossOver...");
+    //System.out.println("CrossOver...");
     this.crossOver(parents1, parents2);
-    System.out.println("Mutation...");
+    //System.out.println("Mutation...");
     this.mutation();
-    System.out.println("Training children...");
+    //System.out.println("Training children...");
     this.trainChildren();
-    System.out.println("Selecting survivors...");
+    //System.out.println("Selecting survivors...");
     this.selectSurvivors();
   }
 
@@ -336,7 +363,7 @@ public class GPMF extends Recommender {
     }
 
     // Elite selection
-    HashMap<Integer, Double> sorted = sortByValue(totalScores);
+    HashMap<Integer, Double> sorted = sortScoresByValue(totalScores);
 
     Iterator it = sorted.entrySet().iterator();
     Map.Entry<Integer, Double> elite1 = (Map.Entry) it.next();
@@ -350,40 +377,53 @@ public class GPMF extends Recommender {
     inserted[1] = elite2.getKey();
 
     // RouletteWheel Selection
-    double[] probabilities = new double[totalSize];
-
     double N = 0;
     it = sorted.entrySet().iterator();
     double worstValue = 0;
     while (it.hasNext()) {
       Map.Entry<Integer, Double> entry = (Map.Entry) it.next();
-      worstValue = entry.getValue();
+      if (!(Double.isNaN(entry.getValue()) || Double.isInfinite(entry.getValue())))
+        worstValue = entry.getValue();
     }
 
     it = sorted.entrySet().iterator();
     while (it.hasNext()) {
       Map.Entry<Integer, Double> entry = (Map.Entry) it.next();
-      N += (entry.getValue() - worstValue);
+      if (!(Double.isNaN(entry.getValue()) || Double.isInfinite(entry.getValue())))
+        N += (entry.getValue() - worstValue);
+      else totalSize--;
     }
 
+    double[] probabilities = new double[totalSize];
+    HashMap<Integer, Double> finalScores = new HashMap<Integer, Double>();
+    HashMap<Integer, Tree> finalPopulation = new HashMap<Integer, Tree>();
+
     it = totalScores.entrySet().iterator();
-    for (int i = 0; i < totalSize; i++) {
-      if (i == 0) {
-        probabilities[i] = (totalScores.get(i) - worstValue) / N;
-      } else {
-        probabilities[i] = probabilities[i - 1] + ((totalScores.get(i) - worstValue) / N);
+    int k = 0;
+    for (int i = 0; i < totalScores.size(); i++) {
+      if (!(Double.isNaN(totalScores.get(i)) || Double.isInfinite(totalScores.get(i)))) {
+        if (k == 0) {
+          probabilities[k] = (totalScores.get(i) - worstValue) / N;
+          finalScores.put(k, totalScores.get(i));
+          finalPopulation.put(k, totalPopulation.get(i).clone());
+        } else {
+          probabilities[k] = probabilities[k - 1] + ((totalScores.get(i) - worstValue) / N);
+          finalScores.put(k, totalScores.get(i));
+          finalPopulation.put(k, totalPopulation.get(i).clone());
+        }
+        k++;
       }
     }
 
     // Select survivors
     for (int i = 2; i < this.popSize; i++) {
-      double selection = this.seed.nextDouble();
+      double selection = this.rand.nextDouble();
       boolean found = false;
       for (int j = 0; j < probabilities.length && !found; j++) {
         int finalJ = j;
         if (selection < probabilities[j] && !IntStream.of(inserted).anyMatch(x -> x == finalJ)) {
-          population.put(i, totalPopulation.get(j).clone());
-          scores.put(i, totalScores.get(j));
+          population.put(i, finalPopulation.get(j).clone());
+          scores.put(i, finalScores.get(j));
           inserted[i] = j;
           found = true;
         }
@@ -391,7 +431,7 @@ public class GPMF extends Recommender {
     }
   }
 
-  private HashMap<Integer, Double> sortByValue(HashMap<Integer, Double> hm) {
+  private HashMap<Integer, Double> sortScoresByValue(HashMap<Integer, Double> hm) {
     List<Map.Entry<Integer, Double>> list =
         new LinkedList<Map.Entry<Integer, Double>>(hm.entrySet());
 
@@ -410,6 +450,26 @@ public class GPMF extends Recommender {
     return temp;
   }
 
+  private HashMap<Integer, Tree> sortPopulationByValue(HashMap<Integer, Tree> hm) {
+    List<Map.Entry<Integer, Tree>> list =
+        new LinkedList<Map.Entry<Integer, Tree>>(
+            (Collection<? extends Map.Entry<Integer, Tree>>) hm.entrySet());
+
+    Collections.sort(
+        list,
+        new Comparator<Map.Entry<Integer, Tree>>() {
+          public int compare(Map.Entry<Integer, Tree> o1, Map.Entry<Integer, Tree> o2) {
+            return (o1.getValue().toString()).compareTo(o2.getValue().toString());
+          }
+        });
+
+    HashMap<Integer, Tree> temp = new LinkedHashMap<Integer, Tree>();
+    for (Map.Entry<Integer, Tree> aa : list) {
+      temp.put(aa.getKey(), aa.getValue());
+    }
+    return temp;
+  }
+
   private void trainChildren() throws ExecutionException, InterruptedException {
     ForkJoinPool myPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
     myPool
@@ -418,49 +478,52 @@ public class GPMF extends Recommender {
                 children.entrySet().parallelStream()
                     .forEach(
                         entry -> {
-                          Integer key = entry.getKey();
-
-                          Recommender mf =
-                              new MF(
-                                  datamodel,
-                                  children.get(key),
-                                  this.numFactors,
-                                  this.numIters,
-                                  this.regularization,
-                                  this.learningRate);
-                          mf.fit();
-                          MSE mseInstance = new MSE(mf);
-                          double mse = mseInstance.getScore(1);
-
-                          /*
-                          while(Double.isNaN(mse)){
-                              children.get(key).regenerate();
-                              mf = new MF(datamodel, children.get(key), this.numFactors, this.numIters, this.regularization, this.learningRate);
+                          try {
+                            if (!Double.isNaN(entry.getValue().getScore())) {
+                              Recommender mf =
+                                  new MF(
+                                      this.datamodel,
+                                      entry.getValue().clone(),
+                                      this.numFactors,
+                                      this.numIters,
+                                      this.regularization,
+                                      this.learningRate,
+                                      this.seed);
                               mf.fit();
-                              mseInstance = new MSE(mf);
-                              mse = mseInstance.getScore(1);
+
+                              MSE mseInstance = new MSE(mf);
+                              double mse = mseInstance.getScore(1);
+
+                              entry.getValue().setScore(mse);
+                            }
+                          } catch (Exception e) {
+                            entry.getValue().setScore(Double.NaN);
                           }
-                          */
-                          if (Double.isNaN(mse)) this.invalidChildren++;
-                          childrenScores.put(key, mse);
-                          System.out.println("MSE of tree " + key + ": " + mse);
+                          if (Double.isNaN(entry.getValue().getScore())) {
+                            this.invalidChildren++;
+                          }
+                          System.out.print(".");
                         }))
         .get();
+
+    for (Map.Entry<Integer, Tree> individual : children.entrySet()) {
+      childrenScores.put(individual.getKey(), individual.getValue().getScore());
+    }
+    System.gc();
   }
 
   private void mutation() {
 
     for (int i = 0; i < this.numChildren; i++) {
-      if (this.seed.nextDouble() < this.pbmut) {
-        children.get(i).reset();
-        children.get(i).restructure();
+      if (this.rand.nextDouble() < this.pbmut) {
+
         int numNodes = children.get(i).getOffspring();
         int nodeMutation;
         Node node = null;
         String treeInstance1NodeClass = null;
 
         do {
-          nodeMutation = (int) Math.floor(this.seed.nextDouble() * numNodes);
+          nodeMutation = (int) Math.floor(this.rand.nextDouble() * numNodes+1);
           try {
             node = children.get(i).getNode(nodeMutation);
             treeInstance1NodeClass = node.getNodeClass();
@@ -498,13 +561,16 @@ public class GPMF extends Recommender {
         children.get(i).setNode(mutation, nodeMutation);
         children.get(i).reset();
         children.get(i).restructure();
+        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
+          children.get(i).setScore(Double.NaN);
+        }
       }
     }
   }
 
   private void crossOver(int[] parents1, int[] parents2) {
     for (int i = 0; i < this.numChildren / 2; i++) {
-      if (this.seed.nextDouble() < this.pbx) {
+      if (this.rand.nextDouble() < this.pbx) {
         this.children.put(i * 2, population.get(parents1[i]).clone());
         this.children.put(i * 2 + 1, population.get(parents2[i]).clone());
 
@@ -519,8 +585,9 @@ public class GPMF extends Recommender {
         int nodeCrossover2 = -1;
 
         do {
-          nodeCrossover1 = (int) Math.floor(this.seed.nextDouble() * numNodesParent1);
-          nodeCrossover2 = (int) Math.floor(this.seed.nextDouble() * numNodesParent2);
+          nodeCrossover1 = (int) Math.floor(this.rand.nextDouble() * numNodesParent1 + 1);
+          nodeCrossover2 = (int) Math.floor(this.rand.nextDouble() * numNodesParent2 + 1);
+
           try {
             node1 = children.get(i * 2).getNode(nodeCrossover1);
             treeInstance1NodeClass = node1.getNodeClass();
@@ -544,53 +611,44 @@ public class GPMF extends Recommender {
         this.children.get(i * 2).restructure();
         this.children.get(i * 2 + 1).reset();
         this.children.get(i * 2 + 1).restructure();
+        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
+          children.get(i*2).setScore(Double.NaN);
+        }
+        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
+          children.get(i*2+1).setScore(Double.NaN);
+        }
       }
     }
   }
 
   private void trainGeneration() throws ExecutionException, InterruptedException {
-    ForkJoinPool myPool = new ForkJoinPool(80);
+    ForkJoinPool myPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
     myPool
         .submit(
             () ->
                 population.entrySet().parallelStream()
                     .forEach(
                         entry -> {
-                          Integer key = entry.getKey();
-
                           Recommender mf =
                               new MF(
                                   datamodel,
-                                  population.get(key),
+                                  entry.getValue(),
                                   this.numFactors,
                                   this.numIters,
                                   this.regularization,
-                                  this.learningRate);
+                                  this.learningRate,
+                                  this.seed);
                           mf.fit();
 
                           MSE mseInstance = new MSE(mf);
                           double mse = mseInstance.getScore(1);
-
-                          while (Double.isNaN(mse)) {
-                            population.get(key).regenerate();
-                            mf =
-                                new MF(
-                                    datamodel,
-                                    population.get(key),
-                                    this.numFactors,
-                                    this.numIters,
-                                    this.regularization,
-                                    this.learningRate);
-                            mf.fit();
-
-                            mseInstance = new MSE(mf);
-                            mse = mseInstance.getScore(1);
-                          }
-
-                          scores.put(key, mse);
-                          System.out.println("MSE of tree " + key + ": " + mse);
+                          entry.getValue().setScore(mse);
                         }))
         .get();
+
+    for (Map.Entry<Integer, Tree> individual : population.entrySet()) {
+      scores.put(individual.getKey(), individual.getValue().getScore());
+    }
   }
 
   private void selectParents(int[] parents1, int[] parents2) {
@@ -599,15 +657,15 @@ public class GPMF extends Recommender {
       for (int j = 0; j < gladiators.length; j++) {
         gladiators[j] = -1;
       }
-      gladiators[0] = (int) Math.floor(this.seed.nextDouble() * this.popSize);
+      gladiators[0] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
       do {
-        gladiators[1] = (int) Math.floor(this.seed.nextDouble() * this.popSize);
+        gladiators[1] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
       } while (compGladiator(1, gladiators));
       do {
-        gladiators[2] = (int) Math.floor(this.seed.nextDouble() * this.popSize);
+        gladiators[2] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
       } while (compGladiator(2, gladiators));
       do {
-        gladiators[3] = (int) Math.floor(this.seed.nextDouble() * this.popSize);
+        gladiators[3] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
       } while (compGladiator(3, gladiators));
 
       if (scores.get(gladiators[0]) < scores.get(gladiators[1])) parents1[i] = gladiators[0];

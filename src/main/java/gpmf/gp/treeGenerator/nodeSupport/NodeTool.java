@@ -6,6 +6,7 @@ import java.util.Random;
 public class NodeTool {
   private int maxDepth;
   private int maxNodes;
+  private int depth;
   private int currentNodeNumber;
   private HashMap<String, Double> factorsValues;
   private String[] factors;
@@ -16,22 +17,21 @@ public class NodeTool {
   private boolean isWhileStmt = false;
 
   private Random rand;
-  private long seed;
 
-  public NodeTool(int maxDepth, int maxNodes, int currentNodeNumber, int numFactors, long seed) {
+  public NodeTool(int maxDepth, int maxNodes, int currentNodeNumber, int numFactors, Random rand) {
     this.setMaxDepth(maxDepth);
     this.setMaxNodes(maxNodes);
     this.setCurrentNodeNumber(currentNodeNumber);
     this.setFactors(numFactors);
+    this.depth = 0;
     this.numFactors = numFactors;
-    this.rand = new Random(seed);
-    this.seed = seed;
+    this.rand = rand;
   }
 
   public NodeTool clone() {
     NodeTool aux =
         new NodeTool(
-            this.maxDepth, this.maxNodes, this.currentNodeNumber, this.numFactors, this.seed);
+            this.maxDepth, this.maxNodes, this.currentNodeNumber, this.numFactors, this.rand);
     aux.setFactorsValues(this.factorsValues);
     aux.setResult(this.result);
     aux.setPrintFirstResult(this.printFirstResult);
@@ -39,25 +39,29 @@ public class NodeTool {
     return aux;
   }
 
-  public void setRandom(long seed) {
-    this.rand = new Random(seed);
+  public void setDepth(int depth) {
+    this.depth = depth;
   }
-  ;
+
+  public int getDepth() {
+    return this.depth;
+  }
+
+  public void setRandom(Random rand) {
+    this.rand = rand;
+  }
 
   public Random getRandom() {
     return this.rand;
   }
-  ;
 
   public void setMaxDepth(int maxDepthParam) {
     this.maxDepth = maxDepthParam;
   }
-  ;
 
   public int getMaxDepth() {
     return this.maxDepth;
   }
-  ;
 
   public void setMaxNodes(int numberNodes) {
     this.maxNodes = numberNodes;
@@ -78,7 +82,6 @@ public class NodeTool {
   public void setResult(double resultParam) {
     this.result = resultParam;
   }
-  ;
 
   public double getResult() {
     return this.result;
