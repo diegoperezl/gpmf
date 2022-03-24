@@ -65,17 +65,16 @@ public class GPMF extends Recommender {
   private final long seed;
 
   /** HashMap of population trees */
-  private Map<Integer, Tree> population = Collections.synchronizedMap(new HashMap<Integer, Tree>());
+  private Map<Integer, Tree> population = new HashMap<Integer, Tree>();
 
   /** HashMap of children trees */
-  private Map<Integer, Tree> children = Collections.synchronizedMap(new HashMap<Integer, Tree>());
+  private Map<Integer, Tree> children = new HashMap<Integer, Tree>();
 
   /** HashMap of population scores */
-  private Map<Integer, Double> scores = Collections.synchronizedMap(new HashMap<Integer, Double>());
+  private Map<Integer, Double> scores = new HashMap<Integer, Double>();
 
   /** HashMap of children scores */
-  private Map<Integer, Double> childrenScores =
-      Collections.synchronizedMap(new HashMap<Integer, Double>());
+  private Map<Integer, Double> childrenScores = new HashMap<Integer, Double>();
 
   /** MF instance of best tree */
   private volatile MF bestMF = null;
@@ -232,7 +231,8 @@ public class GPMF extends Recommender {
     this.seed = seed;
 
     for (int i = 0; i < this.popSize; i++) {
-      population.put(i, new Tree(this.maxDepthInit, this.numFactors, this.maxNodesInit, this.rand, 0));
+      population.put(
+          i, new Tree(this.maxDepthInit, this.numFactors, this.maxNodesInit, this.rand, 0));
       population.get(i).generateTree();
     }
 
@@ -248,7 +248,6 @@ public class GPMF extends Recommender {
 
   @Override
   public void fit() {
-
     OutputStream out = null;
     try {
       String fileDate = new SimpleDateFormat("yyyyMMddHHmm'.txt'").format(new Date());
@@ -263,7 +262,7 @@ public class GPMF extends Recommender {
       e.printStackTrace();
     }
 
-    //System.out.println("Generation number: " + 0);
+    // System.out.println("Generation number: " + 0);
 
     try {
       this.trainGeneration();
@@ -334,15 +333,15 @@ public class GPMF extends Recommender {
     int[] parents1 = new int[this.numChildren / 2];
     int[] parents2 = new int[this.numChildren / 2];
 
-    //System.out.println("Selecting parents...");
+    // System.out.println("Selecting parents...");
     this.selectParents(parents1, parents2);
-    //System.out.println("CrossOver...");
+    // System.out.println("CrossOver...");
     this.crossOver(parents1, parents2);
-    //System.out.println("Mutation...");
+    // System.out.println("Mutation...");
     this.mutation();
-    //System.out.println("Training children...");
+    // System.out.println("Training children...");
     this.trainChildren();
-    //System.out.println("Selecting survivors...");
+    // System.out.println("Selecting survivors...");
     this.selectSurvivors();
   }
 
@@ -471,40 +470,35 @@ public class GPMF extends Recommender {
   }
 
   private void trainChildren() throws ExecutionException, InterruptedException {
-    ForkJoinPool myPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-    myPool
-        .submit(
-            () ->
-                children.entrySet().parallelStream()
-                    .forEach(
-                        entry -> {
-                          try {
-                            if (!Double.isNaN(entry.getValue().getScore())) {
-                              Recommender mf =
-                                  new MF(
-                                      this.datamodel,
-                                      entry.getValue().clone(),
-                                      this.numFactors,
-                                      this.numIters,
-                                      this.regularization,
-                                      this.learningRate,
-                                      this.seed);
-                              mf.fit();
 
-                              MSE mseInstance = new MSE(mf);
-                              double mse = mseInstance.getScore(1);
+    long startTime = System.currentTimeMillis();
 
-                              entry.getValue().setScore(mse);
-                            }
-                          } catch (Exception e) {
-                            entry.getValue().setScore(Double.NaN);
-                          }
-                          if (Double.isNaN(entry.getValue().getScore())) {
-                            this.invalidChildren++;
-                          }
-                          System.out.print(".");
-                        }))
-        .get();
+    Thread[] pool = new Thread[numChildren];
+    for (int i = 0; i < numChildren; i++) {
+      Recommender mf =
+          new MF(
+              datamodel,
+              children.get(i),
+              this.numFactors,
+              this.numIters,
+              this.regularization,
+              this.learningRate,
+              this.seed);
+      Trainer t = new Trainer((MF) mf, children.get(i), true);
+      pool[i] = new Thread(t, String.valueOf(i));
+      pool[i].start();
+    }
+
+    for (int i = 0; i < pool.length; i++) {
+      if (Double.isNaN(children.get(i).getScore())) this.invalidChildren++;
+      pool[i].join();
+    }
+
+    long endTime = System.currentTimeMillis();
+    long timeElapsed = endTime - startTime;
+
+    System.out.println();
+    System.out.println("Tiempo entrenando: " + (timeElapsed / 1000));
 
     for (Map.Entry<Integer, Tree> individual : children.entrySet()) {
       childrenScores.put(individual.getKey(), individual.getValue().getScore());
@@ -523,11 +517,12 @@ public class GPMF extends Recommender {
         String treeInstance1NodeClass = null;
 
         do {
-          nodeMutation = (int) Math.floor(this.rand.nextDouble() * numNodes+1);
+          nodeMutation = (int) Math.floor(this.rand.nextDouble() * numNodes + 1);
           try {
             node = children.get(i).getNode(nodeMutation);
             treeInstance1NodeClass = node.getNodeClass();
           } catch (Exception e) {
+            System.out.println("5555555555555555555555555555555555555 nodo fallido");
           }
         } while (node == null);
 
@@ -561,7 +556,8 @@ public class GPMF extends Recommender {
         children.get(i).setNode(mutation, nodeMutation);
         children.get(i).reset();
         children.get(i).restructure();
-        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
+        if (children.get(i).getOffspring() > this.maxNodesFinal
+            || children.get(i).getDepth() > this.maxDepthFinal) {
           children.get(i).setScore(Double.NaN);
         }
       }
@@ -573,6 +569,9 @@ public class GPMF extends Recommender {
       if (this.rand.nextDouble() < this.pbx) {
         this.children.put(i * 2, population.get(parents1[i]).clone());
         this.children.put(i * 2 + 1, population.get(parents2[i]).clone());
+
+        children.get(i * 2).restructure();
+        children.get(i * 2 + 1).restructure();
 
         int numNodesParent1 = children.get(i * 2).getOffspring();
         int numNodesParent2 = children.get(i * 2 + 1).getOffspring();
@@ -611,40 +610,38 @@ public class GPMF extends Recommender {
         this.children.get(i * 2).restructure();
         this.children.get(i * 2 + 1).reset();
         this.children.get(i * 2 + 1).restructure();
-        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
-          children.get(i*2).setScore(Double.NaN);
+        if (children.get(i * 2).getOffspring() > this.maxNodesFinal
+            || children.get(i * 2).getDepth() > this.maxDepthFinal) {
+          children.get(i * 2).setScore(Double.NaN);
         }
-        if(children.get(i).getOffspring() > this.maxNodesFinal || children.get(i).getDepth() > this.maxDepthFinal){
-          children.get(i*2+1).setScore(Double.NaN);
+        if (children.get(i * 2 + 1).getOffspring() > this.maxNodesFinal
+            || children.get(i * 2 + 1).getDepth() > this.maxDepthFinal) {
+          children.get(i * 2 + 1).setScore(Double.NaN);
         }
       }
     }
   }
 
   private void trainGeneration() throws ExecutionException, InterruptedException {
-    ForkJoinPool myPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
-    myPool
-        .submit(
-            () ->
-                population.entrySet().parallelStream()
-                    .forEach(
-                        entry -> {
-                          Recommender mf =
-                              new MF(
-                                  datamodel,
-                                  entry.getValue(),
-                                  this.numFactors,
-                                  this.numIters,
-                                  this.regularization,
-                                  this.learningRate,
-                                  this.seed);
-                          mf.fit();
+    Thread[] pool = new Thread[popSize];
+    for (int i = 0; i < popSize; i++) {
+      Recommender mf =
+          new MF(
+              datamodel,
+              population.get(i),
+              this.numFactors,
+              this.numIters,
+              this.regularization,
+              this.learningRate,
+              this.seed);
+      Trainer t = new Trainer((MF) mf, population.get(i), false);
+      pool[i] = new Thread(t, String.valueOf(i));
+      pool[i].start();
+    }
 
-                          MSE mseInstance = new MSE(mf);
-                          double mse = mseInstance.getScore(1);
-                          entry.getValue().setScore(mse);
-                        }))
-        .get();
+    for (int i = 0; i < pool.length; i++) {
+      pool[i].join();
+    }
 
     for (Map.Entry<Integer, Tree> individual : population.entrySet()) {
       scores.put(individual.getKey(), individual.getValue().getScore());
@@ -684,3 +681,52 @@ public class GPMF extends Recommender {
     return res;
   }
 }
+
+class Trainer implements Runnable {
+
+  private final MF mf;
+  private final Tree individual;
+  private final boolean isChild;
+
+  Trainer(MF mf, Tree individual, boolean isChild) {
+    this.mf = mf;
+    this.individual = individual;
+    this.isChild = isChild;
+  }
+
+  @Override
+  public void run() {
+    long startTime = System.currentTimeMillis();
+    double mse = Double.POSITIVE_INFINITY;
+    if(isChild){
+      try {
+        if (!Double.isNaN(individual.getScore())) {
+          mf.fit();
+          MSE mseInstance = new MSE(mf);
+          mse = mseInstance.getScore(1);
+          individual.setScore(mse);
+        }
+      } catch (Exception e) {
+        individual.setScore(Double.NaN);
+      }
+    }else{
+      try {
+          mf.fit();
+          MSE mseInstance = new MSE(mf);
+          mse = mseInstance.getScore(1);
+          individual.setScore(mse);
+
+      } catch (Exception e) {
+        individual.setScore(Double.NaN);
+      }
+    }
+    long endTime = System.currentTimeMillis();
+    System.out.println();
+    System.out.println("########################################");
+    System.out.println("Ha tardado: "+((endTime-startTime)/1000)+" con "+individual.getOffspring()+" nodos y "+individual.getDepth()+" profundidad, Score: "+mse);
+    mf.getTree().reset();
+    mf.getTree().print();
+    System.out.println("########################################");
+  }
+}
+

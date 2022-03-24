@@ -8,6 +8,7 @@ public class NodeTool {
   private int maxNodes;
   private int depth;
   private int currentNodeNumber;
+  private boolean hasCondition;
   private HashMap<String, Double> factorsValues;
   private String[] factors;
   private int numFactors;
@@ -26,17 +27,27 @@ public class NodeTool {
     this.depth = 0;
     this.numFactors = numFactors;
     this.rand = rand;
+    this.hasCondition = false;
   }
 
   public NodeTool clone() {
     NodeTool aux =
         new NodeTool(
             this.maxDepth, this.maxNodes, this.currentNodeNumber, this.numFactors, this.rand);
-    aux.setFactorsValues(this.factorsValues);
+    //aux.setFactorsValues(this.factorsValues);
     aux.setResult(this.result);
     aux.setPrintFirstResult(this.printFirstResult);
     aux.setIsWhileStmt(this.isWhileStmt);
+    aux.setHasCondition(this.hasCondition);
     return aux;
+  }
+
+  public void setHasCondition(boolean hasCondition) {
+    this.hasCondition = hasCondition;
+  }
+
+  public boolean getHasCondition() {
+    return this.hasCondition;
   }
 
   public void setDepth(int depth) {
@@ -145,7 +156,7 @@ public class NodeTool {
   public void reset() {
     this.setPrintFirstResult(false);
     this.setResult(1.0);
-    this.setCurrentNodeNumber(0);
+    //this.setCurrentNodeNumber(0);
   }
 
   public String selectLeafValue() {
@@ -158,7 +169,8 @@ public class NodeTool {
     String statementNodeTypeSelection = null;
 
     double assignProb = (0.55 + 0.15 * depth);
-    double ifProb = (0.45 - 0.15 * depth) / 2 + (7.5 * depth);
+    //double ifProb = (0.45 - 0.15 * depth) / 2 + (7.5 * depth);
+    double ifProb = 1-assignProb;
     if (depth >= this.maxDepth || this.currentNodeNumber > this.maxNodes) {
       statementNodeTypeSelection = "AssignStmt";
     } else {

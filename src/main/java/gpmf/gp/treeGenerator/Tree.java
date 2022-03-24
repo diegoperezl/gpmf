@@ -78,6 +78,7 @@ public class Tree {
 
   public void restructure() {
     nodeTool.setCurrentNodeNumber(0);
+    nodeTool.setHasCondition(false);
     this.root.restructure(0);
     this.setOffspring(nodeTool.getCurrentNodeNumber());
   }

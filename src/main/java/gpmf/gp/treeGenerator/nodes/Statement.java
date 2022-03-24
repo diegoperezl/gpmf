@@ -81,7 +81,7 @@ public class Statement extends Node {
   }
 
   public void whileStmtExpand() {
-
+    super.getNodeTool().setHasCondition(true);
     String statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth() + 1);
     this.getNodeTool().addNodeNumber();
     this.setOffspring(this.getOffspring() + 1);
@@ -110,7 +110,7 @@ public class Statement extends Node {
   }
 
   public void ifStmtExpand() {
-
+    super.getNodeTool().setHasCondition(true);
     String statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth() + 1);
     this.getNodeTool().addNodeNumber();
     this.setLeftNode(
@@ -263,6 +263,7 @@ public class Statement extends Node {
       this.getLeftNode().restructure(depth + 1);
     }
     if (this.getConditionNode() != null && this.getNodeType() != "AssignStmt") {
+      super.getNodeTool().setHasCondition(true);
       this.getNodeTool().addNodeNumber();
       this.getConditionNode().restructure(depth + 1);
     }

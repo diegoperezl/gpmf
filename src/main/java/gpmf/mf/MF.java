@@ -26,7 +26,7 @@ public class MF extends Recommender {
   private int numIters;
 
   /** SymFunction instance * */
-  private volatile SymFunction sf = null;
+  private SymFunction sf = null;
 
   /** Tree instance * */
   private Tree treeInstance;
@@ -138,12 +138,19 @@ public class MF extends Recommender {
     }
   }
 
-  public synchronized void fit() {
+  public void fit() {
+    boolean hasCondition = true;
+
+    SymFunction[] puSfDiff = new SymFunction[this.numFactors];
+    SymFunction[] qiSfDiff = new SymFunction[this.numFactors];
+
     for (int iter = 1; iter <= this.numIters; iter++) {
 
       // compute gradient
       double[][] dp = new double[super.getDataModel().getNumberOfUsers()][this.numFactors];
       double[][] dq = new double[super.getDataModel().getNumberOfItems()][this.numFactors];
+
+      String oldFunc = "";
 
       for (User user : super.getDataModel().getUsers()) {
         for (int i = 0; i < user.getNumberOfRatings(); i++) {
@@ -151,35 +158,23 @@ public class MF extends Recommender {
 
           HashMap<String, Double> params = getParams(p[user.getUserIndex()], q[itemIndex]);
 
-          treeInstance.reset();
-          treeInstance.restructure();
-          treeInstance.setFactorsValues(params);
-          String func = treeInstance.getPrefix();
+          if (hasCondition) {
+            treeInstance.reset();
+            treeInstance.setFactorsValues(params);
+            String func = treeInstance.getPrefix();
 
-          SymFunction[] puSfDiff;
-          SymFunction[] qiSfDiff;
-
-          try {
-            this.sf = SymFunction.parse(func);
-
-            puSfDiff = new SymFunction[this.numFactors];
-            qiSfDiff = new SymFunction[this.numFactors];
-
-            for (int k = 0; k < this.numFactors; k++) {
-              puSfDiff[k] = this.sf.diff("pu" + k);
-              qiSfDiff[k] = this.sf.diff("qi" + k);
-            }
-          } catch (Exception e) {
-            func = "Zero";
-
-            this.sf = SymFunction.parse(func);
-
-            puSfDiff = new SymFunction[this.numFactors];
-            qiSfDiff = new SymFunction[this.numFactors];
-
-            for (int k = 0; k < this.numFactors; k++) {
-              puSfDiff[k] = this.sf.diff("pu" + k);
-              qiSfDiff[k] = this.sf.diff("qi" + k);
+            if (!func.equals(oldFunc)) {
+              try {
+                this.sf = SymFunction.parse(func);
+              } catch (Exception e) {
+                this.sf = SymFunction.parse("Zero");
+              }
+              for (int k = 0; k < this.numFactors; k++) {
+                puSfDiff[k] = this.sf.diff("pu" + k);
+                qiSfDiff[k] = this.sf.diff("qi" + k);
+              }
+              if (hasCondition) hasCondition = treeInstance.getNodeTool().getHasCondition();
+              oldFunc = func;
             }
           }
 
@@ -215,23 +210,45 @@ public class MF extends Recommender {
   }
 
   @Override
-  public synchronized double predict(int userIndex, int itemIndex) {
-    double prediction;
-    HashMap<String, Double> params = getParams(this.p[userIndex], this.q[itemIndex]);
+  public double predict(int userIndex, int itemIndex) {
+    HashMap<String, Double> params = getParams(p[userIndex], q[itemIndex]);
     treeInstance.reset();
-    treeInstance.restructure();
     treeInstance.setFactorsValues(params);
     String func = treeInstance.getPrefix();
+
+    SymFunction[] puSfDiff;
+    SymFunction[] qiSfDiff;
+
     try {
-      sf = SymFunction.parse(func);
-      prediction = sf.eval(params);
+      this.sf = SymFunction.parse(func);
+
+      puSfDiff = new SymFunction[this.numFactors];
+      qiSfDiff = new SymFunction[this.numFactors];
+
+      for (int k = 0; k < this.numFactors; k++) {
+        puSfDiff[k] = this.sf.diff("pu" + k);
+        qiSfDiff[k] = this.sf.diff("qi" + k);
+      }
     } catch (Exception e) {
       func = "Zero";
-      sf = SymFunction.parse(func);
-      prediction = sf.eval(params);
+
+      this.sf = SymFunction.parse(func);
+
+      puSfDiff = new SymFunction[this.numFactors];
+      qiSfDiff = new SymFunction[this.numFactors];
+
+      for (int k = 0; k < this.numFactors; k++) {
+        puSfDiff[k] = this.sf.diff("pu" + k);
+        qiSfDiff[k] = this.sf.diff("qi" + k);
+      }
     }
 
+    double prediction = this.sf.eval(params);
     return prediction;
+  }
+
+  public Tree getTree(){
+    return this.treeInstance;
   }
 
   private double random(double min, double max) {
