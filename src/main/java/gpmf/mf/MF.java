@@ -56,9 +56,8 @@ public class MF extends Recommender {
    *
    * @param datamodel DataModel instance
    * @param params Model's hyper-parameters values
-   * @param sf
    */
-  public MF(DataModel datamodel, Map<String, Object> params, SymFunction sf) {
+  public MF(DataModel datamodel, Map<String, Object> params) {
     this(
         datamodel,
         (Tree) params.get("tree"),
@@ -210,7 +209,7 @@ public class MF extends Recommender {
   }
 
   @Override
-  public double predict(int userIndex, int itemIndex) {
+  public synchronized double predict(int userIndex, int itemIndex) {
     HashMap<String, Double> params = getParams(p[userIndex], q[itemIndex]);
     treeInstance.reset();
     treeInstance.setFactorsValues(params);

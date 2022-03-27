@@ -26,6 +26,10 @@ public abstract class Node extends TreeElement {
 
   public abstract void expand();
 
+  public abstract void setNode(Node node, int nodeNumber);
+
+  public abstract Node getNode(int nodeNumber);
+
   public String selectBinaryOperatorExpression() {
     int operatorSelection =
         (int) Math.floor(this.nodeTool.getRandom().nextDouble() * binaryOperators.length);
@@ -106,7 +110,4 @@ public abstract class Node extends TreeElement {
     return this.operator;
   }
 
-  public abstract void setNode(Node node, int nodeNumber);
-
-  public abstract Node getNode(int nodeNumber);
 }

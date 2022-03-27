@@ -3,11 +3,16 @@ package gpmf;
 import es.upm.etsisi.cf4j.data.DataModel;
 
 import es.upm.etsisi.cf4j.recommender.Recommender;
+import es.upm.etsisi.cf4j.util.optimization.GridSearchCV;
+import es.upm.etsisi.cf4j.util.optimization.ParamsGrid;
+import es.upm.etsisi.cf4j.util.optimization.RandomSearch;
+import es.upm.etsisi.cf4j.util.optimization.RandomSearchCV;
 import gpmf.gp.treeGenerator.Tree;
 import gpmf.gp.treeGenerator.nodes.ConditionExpression;
 import gpmf.gp.treeGenerator.nodes.Expression;
 import gpmf.gp.treeGenerator.nodes.Node;
 import gpmf.gp.treeGenerator.nodes.Statement;
+import gpmf.gp.treeRepresentation.DrawTree;
 import gpmf.mf.MF;
 import qualityMeasures.prediction.MSE;
 
@@ -58,6 +63,12 @@ public class GPMF extends Recommender {
   /** Number of children */
   private final int numChildren;
 
+  /** Early stopping value */
+  private final double earlyStoppingValue;
+
+  /** Early stopping count */
+  private final int earlyStoppingCount;
+
   /** Random generator of the model */
   private final Random rand;
 
@@ -100,6 +111,10 @@ public class GPMF extends Recommender {
    *   <li><b>maxDepthFinal</b>: int value with the maximum final depth of trees.
    *   <li><b>maxNodesInit</b>: int value with the maximum initial number of nodes.
    *   <li><b>maxNodesFinal</b>: int value with the maximum final number of nodes.
+   *   <li><b>earlyStoppingValue</b>: double value with the early stopping bound, if the mean of the
+   *       scores is less than this value the early stopping counter is increased by one.
+   *   <li><b>earlyStoppingCount</b>: int value with the bound of generations without improvement,
+   *       this improvement is limited by the value earlyStoppingValue.
    *   <li><b><em>seed</em></b> (optional): random seed for random numbers generation. If missing,
    *       random value is used.
    * </ul>
@@ -123,6 +138,8 @@ public class GPMF extends Recommender {
         (int) params.get("maxDepthFinal"),
         (int) params.get("maxNodesInit"),
         (int) params.get("maxNodesFinal"),
+        (double) params.get("earlyStoppingValue"),
+        (int) params.get("earlyStoppingCount"),
         params.containsKey("seed") ? (long) params.get("seed") : System.currentTimeMillis());
   }
 
@@ -143,6 +160,8 @@ public class GPMF extends Recommender {
    * @param maxDepthFinal Max final depth of trees
    * @param maxNodesInit Max initial number of nodes
    * @param maxNodesFinal Max final number of nodes
+   * @param earlyStoppingValue Limit that considers that a generation has improved
+   * @param earlyStoppingCount Limit of number of generations without improvement
    */
   public GPMF(
       DataModel datamodel,
@@ -158,7 +177,9 @@ public class GPMF extends Recommender {
       int maxDepthInit,
       int maxDepthFinal,
       int maxNodesInit,
-      int maxNodesFinal) {
+      int maxNodesFinal,
+      double earlyStoppingValue,
+      int earlyStoppingCount) {
     this(
         datamodel,
         numFactors,
@@ -174,6 +195,8 @@ public class GPMF extends Recommender {
         maxDepthFinal,
         maxNodesInit,
         maxNodesFinal,
+        earlyStoppingValue,
+        earlyStoppingCount,
         System.currentTimeMillis());
   }
 
@@ -194,6 +217,8 @@ public class GPMF extends Recommender {
    * @param maxDepthFinal Max final depth of trees
    * @param maxNodesInit Max initial number of nodes
    * @param maxNodesFinal Max final number of nodes
+   * @param earlyStoppingValue Limit that considers that a generation has improved
+   * @param earlyStoppingCount Limit of number of generations without improvement
    */
   public GPMF(
       DataModel datamodel,
@@ -210,6 +235,8 @@ public class GPMF extends Recommender {
       int maxDepthFinal,
       int maxNodesInit,
       int maxNodesFinal,
+      double earlyStoppingValue,
+      int earlyStoppingCount,
       long seed) {
 
     super(datamodel);
@@ -226,6 +253,8 @@ public class GPMF extends Recommender {
     this.maxDepthFinal = maxDepthFinal;
     this.maxNodesInit = maxNodesInit;
     this.maxNodesFinal = maxNodesFinal;
+    this.earlyStoppingValue = earlyStoppingValue;
+    this.earlyStoppingCount = earlyStoppingCount;
 
     this.rand = new Random(seed);
     this.seed = seed;
@@ -262,7 +291,7 @@ public class GPMF extends Recommender {
       e.printStackTrace();
     }
 
-    // System.out.println("Generation number: " + 0);
+    double previousMean = 0;
 
     try {
       this.trainGeneration();
@@ -272,9 +301,26 @@ public class GPMF extends Recommender {
       e.printStackTrace();
     }
 
-    int bestIndex = 0;
-    double best = Double.MAX_VALUE;
-    for (int i = 0; i < this.gens; i++) {
+    double totalScoresValue = 0;
+    int totalScoresCount = 0;
+
+    for (int k = 0; k < this.popSize; k++) {
+      try {
+        writer.write(scores.get(k) + ";");
+        if(!Double.isNaN(scores.get(k))){
+          totalScoresValue+=scores.get(k);
+          totalScoresCount++;
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
+    previousMean = totalScoresValue/totalScoresCount;
+
+    int finishCount = 0;
+
+    for (int i = 0; i < this.gens && finishCount<this.earlyStoppingCount; i++) {
       try {
         this.newGeneration();
       } catch (ExecutionException e) {
@@ -283,44 +329,57 @@ public class GPMF extends Recommender {
         e.printStackTrace();
       }
 
+      totalScoresValue = 0;
+      totalScoresCount = 0;
+
       for (int k = 0; k < this.popSize; k++) {
         try {
           writer.write(scores.get(k) + ";");
+          if(!Double.isNaN(scores.get(k)) && !Double.isInfinite(scores.get(k))){
+            totalScoresValue+=scores.get(k);
+            totalScoresCount++;
+          }
         } catch (IOException e) {
           e.printStackTrace();
         }
-        if (scores.get(k) < best) {
-          best = scores.get(k);
-          bestIndex = k;
-        }
       }
+
+      double scoresMean = totalScoresValue/totalScoresCount;
+      if(Math.abs(scoresMean-previousMean)<this.earlyStoppingValue){
+        finishCount++;
+      }else{
+        finishCount = 0;
+      }
+
+      previousMean = scoresMean;
+
       try {
-        writer.write(best + "\n");
+        writer.write("\n");
         writer.flush();
       } catch (IOException e) {
         e.printStackTrace();
       }
 
-      System.out.print("\nGeneration number " + i + " with best result: " + best);
+      System.out.print(
+          "\nGeneration number " + i + " with best result: " + population.get(0).getScore());
       System.out.println(" | Number of invalid children: " + this.invalidChildren);
       this.invalidChildren = 0;
     }
 
-    System.out.println("Best final result: " + best);
-    // population.get(bestIndex).reset();
-    // population.get(bestIndex).restructure();
-    // DrawTree.draw(population.get(bestIndex));
+    System.out.println("Best final result: " + population.get(0).getScore());
 
     this.bestMF =
         new MF(
             datamodel,
-            population.get(bestIndex),
+            population.get(0),
             this.numFactors,
             this.numIters,
             this.regularization,
             this.learningRate,
             this.seed);
     this.bestMF.fit();
+
+    DrawTree.draw(this.bestMF.getTree());
 
     try {
       writer.close();
@@ -350,6 +409,7 @@ public class GPMF extends Recommender {
     HashMap<Integer, Double> totalScores = new HashMap<Integer, Double>();
     HashMap<Integer, Tree> totalPopulation = new HashMap<Integer, Tree>();
     int[] inserted = new int[this.popSize];
+
     for (int i = 0; i < this.popSize; i++) inserted[i] = -1;
 
     for (int i = 0; i < this.popSize; i++) {
@@ -368,6 +428,7 @@ public class GPMF extends Recommender {
     Map.Entry<Integer, Double> elite1 = (Map.Entry) it.next();
     population.put(0, totalPopulation.get(elite1.getKey()));
     scores.put(0, totalScores.get(elite1.getKey()));
+
     Map.Entry<Integer, Double> elite2 = (Map.Entry) it.next();
     population.put(1, totalPopulation.get(elite2.getKey()));
     scores.put(1, totalScores.get(elite2.getKey()));
@@ -469,22 +530,25 @@ public class GPMF extends Recommender {
     return temp;
   }
 
-  private void trainChildren() throws ExecutionException, InterruptedException {
+  private void trainChildren() throws InterruptedException {
 
     long startTime = System.currentTimeMillis();
 
     Thread[] pool = new Thread[numChildren];
     for (int i = 0; i < numChildren; i++) {
-      Recommender mf =
-          new MF(
-              datamodel,
-              children.get(i),
-              this.numFactors,
-              this.numIters,
-              this.regularization,
-              this.learningRate,
-              this.seed);
-      Trainer t = new Trainer((MF) mf, children.get(i), true);
+
+      ParamsGrid paramsGrid = new ParamsGrid();
+
+      paramsGrid.addFixedParam("tree", children.get(i));
+      paramsGrid.addFixedParam("numFactors", this.numFactors);
+      paramsGrid.addFixedParam("regularization", this.regularization);
+      paramsGrid.addFixedParam("learningRate", this.learningRate);
+      paramsGrid.addFixedParam("numIters", this.numIters);
+      paramsGrid.addFixedParam("seed", this.seed);
+
+      GridSearchCV gridSearchMF = new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
+
+      Trainer t = new Trainer(gridSearchMF, children.get(i), false);
       pool[i] = new Thread(t, String.valueOf(i));
       pool[i].start();
     }
@@ -522,7 +586,6 @@ public class GPMF extends Recommender {
             node = children.get(i).getNode(nodeMutation);
             treeInstance1NodeClass = node.getNodeClass();
           } catch (Exception e) {
-            System.out.println("5555555555555555555555555555555555555 nodo fallido");
           }
         } while (node == null);
 
@@ -544,11 +607,7 @@ public class GPMF extends Recommender {
             String conditionNodeTypeSelection = node.getNodeTool().selectConditionExpression();
             mutation =
                 new ConditionExpression(
-                    conditionNodeTypeSelection,
-                    0,
-                    node.getParent(),
-                    node.getNodeTool().getIsWhileStmt(),
-                    node.getNodeTool());
+                    conditionNodeTypeSelection, 0, node.getParent(), node.getNodeTool());
             break;
         }
 
@@ -625,16 +684,19 @@ public class GPMF extends Recommender {
   private void trainGeneration() throws ExecutionException, InterruptedException {
     Thread[] pool = new Thread[popSize];
     for (int i = 0; i < popSize; i++) {
-      Recommender mf =
-          new MF(
-              datamodel,
-              population.get(i),
-              this.numFactors,
-              this.numIters,
-              this.regularization,
-              this.learningRate,
-              this.seed);
-      Trainer t = new Trainer((MF) mf, population.get(i), false);
+
+      ParamsGrid paramsGrid = new ParamsGrid();
+
+      paramsGrid.addFixedParam("tree", population.get(i));
+      paramsGrid.addFixedParam("numFactors", this.numFactors);
+      paramsGrid.addFixedParam("regularization", this.regularization);
+      paramsGrid.addFixedParam("learningRate", this.learningRate);
+      paramsGrid.addFixedParam("numIters", this.numIters);
+      paramsGrid.addFixedParam("seed", this.seed);
+
+      GridSearchCV gridSearchCV = new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
+
+      Trainer t = new Trainer(gridSearchCV, population.get(i), false);
       pool[i] = new Thread(t, String.valueOf(i));
       pool[i].start();
     }
@@ -684,12 +746,12 @@ public class GPMF extends Recommender {
 
 class Trainer implements Runnable {
 
-  private final MF mf;
+  private final GridSearchCV gridSearchCV;
   private final Tree individual;
   private final boolean isChild;
 
-  Trainer(MF mf, Tree individual, boolean isChild) {
-    this.mf = mf;
+  Trainer(GridSearchCV gridSearchCV, Tree individual, boolean isChild) {
+    this.gridSearchCV = gridSearchCV;
     this.individual = individual;
     this.isChild = isChild;
   }
@@ -698,23 +760,21 @@ class Trainer implements Runnable {
   public void run() {
     long startTime = System.currentTimeMillis();
     double mse = Double.POSITIVE_INFINITY;
-    if(isChild){
+    if (isChild) {
       try {
         if (!Double.isNaN(individual.getScore())) {
-          mf.fit();
-          MSE mseInstance = new MSE(mf);
-          mse = mseInstance.getScore(1);
+          this.gridSearchCV.fit();
+          mse = this.gridSearchCV.getBestScore();
           individual.setScore(mse);
         }
       } catch (Exception e) {
         individual.setScore(Double.NaN);
       }
-    }else{
+    } else {
       try {
-          mf.fit();
-          MSE mseInstance = new MSE(mf);
-          mse = mseInstance.getScore(1);
-          individual.setScore(mse);
+        this.gridSearchCV.fit();
+        mse = this.gridSearchCV.getBestScore();
+        individual.setScore(mse);
 
       } catch (Exception e) {
         individual.setScore(Double.NaN);
@@ -723,10 +783,15 @@ class Trainer implements Runnable {
     long endTime = System.currentTimeMillis();
     System.out.println();
     System.out.println("########################################");
-    System.out.println("Ha tardado: "+((endTime-startTime)/1000)+" con "+individual.getOffspring()+" nodos y "+individual.getDepth()+" profundidad, Score: "+mse);
-    mf.getTree().reset();
-    mf.getTree().print();
+    System.out.println(
+        "Ha tardado: "
+            + ((endTime - startTime) / 1000)
+            + " con "
+            + individual.getOffspring()
+            + " nodos y "
+            + individual.getDepth()
+            + " profundidad, Score: "
+            + mse);
     System.out.println("########################################");
   }
 }
-

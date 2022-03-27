@@ -46,13 +46,6 @@ public class Statement extends Node {
       ifStmtExpand();
     } else if (this.getNodeType() == "AssignStmt") {
       assignStmtExpand();
-
-    } else {
-      whileStmtExpand();
-      this.setNodeType(
-          "WHILEStmt count("
-              + ((int) (super.getNodeTool().getRandom().nextDouble() * 3 + 1))
-              + ")");
     }
   }
 
@@ -80,35 +73,6 @@ public class Statement extends Node {
       }
   }
 
-  public void whileStmtExpand() {
-    super.getNodeTool().setHasCondition(true);
-    String statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth() + 1);
-    this.getNodeTool().addNodeNumber();
-    this.setOffspring(this.getOffspring() + 1);
-    this.setLeftNode(
-        new Statement(statementNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
-    this.getLeftNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
-
-    String middleNodeTypeSelection = this.getNodeTool().selectConditionExpression();
-    this.getNodeTool().addNodeNumber();
-    this.setConditionNode(
-        new ConditionExpression(
-            middleNodeTypeSelection, this.getDepth() + 1, this, true, this.getNodeTool()));
-    this.getConditionNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getConditionNode().getOffspring()+1);
-
-    if (!(this.getNodeTool().getCurrentNodeNumber() > this.getNodeTool().getMaxNodes()))
-      if (this.getNodeTool().addNewStmtDecision()) {
-        statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth());
-        this.getNodeTool().addNodeNumber();
-        this.setNextNode(
-            new Statement(statementNodeTypeSelection, this.getDepth(), this, this.getNodeTool()));
-        this.getNextNode().expand();
-        // this.setOffspring(this.getOffspring()+this.getNextNode().getOffspring()+1);
-      }
-  }
-
   public void ifStmtExpand() {
     super.getNodeTool().setHasCondition(true);
     String statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth() + 1);
@@ -122,7 +86,7 @@ public class Statement extends Node {
     this.getNodeTool().addNodeNumber();
     this.setConditionNode(
         new ConditionExpression(
-            middleNodeTypeSelection, this.getDepth() + 1, this, false, this.getNodeTool()));
+            middleNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getConditionNode().expand();
     // this.setOffspring(this.getOffspring()+this.getConditionNode().getOffspring()+1);
 
@@ -198,15 +162,6 @@ public class Statement extends Node {
           res = this.getOperator().getValue() + " " + this.getRightNode().getPrefix(res);
         }
         this.eval();
-      }
-      if (nextNode != null) res = this.nextNode.getPrefix("") + " " + res;
-    } else {
-      int cont = Integer.valueOf(this.getNodeType().substring(16, this.getNodeType().indexOf(")")));
-      if (this.getLeftNode() != null) {
-        while (this.getConditionNode().eval() == 0.0 && cont > 0) {
-          if (this.getLeftNode() != null) res = this.getLeftNode().getPrefix(res) + " " + res;
-          cont--;
-        }
       }
       if (nextNode != null) res = this.nextNode.getPrefix("") + " " + res;
     }
@@ -319,8 +274,7 @@ public class Statement extends Node {
     Node node = null;
     Node auxNode = null;
     boolean found = false;
-    if (this.getNodeType().substring(0, 3) == "WHI") this.getNodeTool().setIsWhileStmt(true);
-    else this.getNodeTool().setIsWhileStmt(false);
+
     if (this.getNodeNumber() == nodeNumber) {
       node = this;
       found = true;
@@ -382,15 +336,6 @@ public class Statement extends Node {
       if (this.nextNode != null) res += "\n" + this.nextNode.toString();
     } else if (this.getNodeType() == "AssignStmt") {
       res += "result " + this.getOperator().toString() + "= " + this.getRightNode().toString();
-      if (this.nextNode != null) res += "\n" + this.nextNode.toString();
-    } else {
-      res += this.getNodeType() + " (" + this.getConditionNode().toString() + "){\n";
-      res += this.getLeftNode().toString() + "\n";
-      for (int i = 0; i < this.getDepth(); i++) res += "\t";
-      res += "}";
-      if (this.getRightNode() != null) {
-        res += this.getRightNode().toString();
-      }
       if (this.nextNode != null) res += "\n" + this.nextNode.toString();
     }
     return res;

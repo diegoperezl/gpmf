@@ -7,41 +7,35 @@ import gpmf.GPMF;
 import qualityMeasures.prediction.MSE;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class main {
   public static void main(String[] args) throws IOException {
 
     DataModel datamodel = BenchmarkDataModels.MovieLens100K();
 
-    ParamsGrid paramsGrid = new ParamsGrid();
+    Map<String, Object> params = new HashMap<String, Object>();
 
-    paramsGrid.addParam("numFactors", new int[] {6});
-    paramsGrid.addParam("regularization", new double[] {0.095});
-    paramsGrid.addParam("learningRate", new double[] {0.001});
-    paramsGrid.addParam("gens", new int[] {150});
-    paramsGrid.addParam("pbmut", new double[] {0.4});
-    paramsGrid.addParam("pbx", new double[] {1.0});
-    paramsGrid.addParam("popSize", new int[] {80});
-    paramsGrid.addParam("numIters", new int[] {100});
-    paramsGrid.addParam("maxDepthInit", new int[] {5});
-    paramsGrid.addParam("maxDepthFinal", new int[] {100});
-    paramsGrid.addParam("maxNodesInit", new int[] {20});
-    paramsGrid.addParam("maxNodesFinal", new int[] {300});
-    paramsGrid.addParam("numChildren", new int[] {80});
+    params.put("numFactors", 6);
+    params.put("regularization", 0.095);
+    params.put("learningRate", 0.001);
+    params.put("gens", 150);
+    params.put("pbmut", 0.4);
+    params.put("pbx", 1.0);
+    params.put("popSize", 80);
+    params.put("numIters", 100);
+    params.put("maxDepthInit", 5);
+    params.put("maxDepthFinal", 100);
+    params.put("maxNodesInit", 20);
+    params.put("maxNodesFinal", 300);
+    params.put("numChildren", 80);
+    params.put("earlyStoppingValue", 0.0001);
+    params.put("earlyStoppingCount", 10);
+    params.put("seed", 42L);
 
-    paramsGrid.addFixedParam("seed", 42L);
+    GPMF gpmf = new GPMF(datamodel, params);
+    gpmf.fit();
 
-    long startTime = System.currentTimeMillis();
-
-    GridSearchCV gridSearch =
-        new GridSearchCV(datamodel, paramsGrid, GPMF.class, MSE.class, 5, 42L);
-    gridSearch.fit();
-
-    long endTime = System.currentTimeMillis();
-    long timeElapsed = endTime - startTime;
-
-    gridSearch.printResults(5);
-
-    System.out.println("Tarda: "+(timeElapsed/1000));
   }
 }

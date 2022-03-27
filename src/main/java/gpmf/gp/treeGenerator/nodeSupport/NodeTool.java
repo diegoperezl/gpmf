@@ -15,7 +15,6 @@ public class NodeTool {
 
   private double result = 1;
   private boolean printFirstResult = false;
-  private boolean isWhileStmt = false;
 
   private Random rand;
 
@@ -34,10 +33,9 @@ public class NodeTool {
     NodeTool aux =
         new NodeTool(
             this.maxDepth, this.maxNodes, this.currentNodeNumber, this.numFactors, this.rand);
-    //aux.setFactorsValues(this.factorsValues);
+    // aux.setFactorsValues(this.factorsValues);
     aux.setResult(this.result);
     aux.setPrintFirstResult(this.printFirstResult);
-    aux.setIsWhileStmt(this.isWhileStmt);
     aux.setHasCondition(this.hasCondition);
     return aux;
   }
@@ -97,7 +95,6 @@ public class NodeTool {
   public double getResult() {
     return this.result;
   }
-  ;
 
   public void setPrintFirstResult(boolean firstResult) {
     this.printFirstResult = firstResult;
@@ -105,14 +102,6 @@ public class NodeTool {
 
   public boolean getPrintFirstResult() {
     return this.printFirstResult;
-  }
-
-  public void setIsWhileStmt(boolean isWhile) {
-    this.isWhileStmt = isWhile;
-  }
-
-  public boolean getIsWhileStmt() {
-    return this.isWhileStmt;
   }
 
   public void addNodeNumber() {
@@ -156,7 +145,7 @@ public class NodeTool {
   public void reset() {
     this.setPrintFirstResult(false);
     this.setResult(1.0);
-    //this.setCurrentNodeNumber(0);
+    // this.setCurrentNodeNumber(0);
   }
 
   public String selectLeafValue() {
@@ -169,15 +158,14 @@ public class NodeTool {
     String statementNodeTypeSelection = null;
 
     double assignProb = (0.55 + 0.15 * depth);
-    //double ifProb = (0.45 - 0.15 * depth) / 2 + (7.5 * depth);
-    double ifProb = 1-assignProb;
+    // double ifProb = (0.45 - 0.15 * depth) / 2 + (7.5 * depth);
+    double ifProb = 1 - assignProb;
     if (depth >= this.maxDepth || this.currentNodeNumber > this.maxNodes) {
       statementNodeTypeSelection = "AssignStmt";
     } else {
       if (statementNodeSelection <= assignProb) statementNodeTypeSelection = "AssignStmt";
       else if (statementNodeSelection > assignProb
           && statementNodeSelection <= (assignProb + ifProb)) statementNodeTypeSelection = "IFStmt";
-      else statementNodeTypeSelection = "WHILEStmt";
     }
     return statementNodeTypeSelection;
   }

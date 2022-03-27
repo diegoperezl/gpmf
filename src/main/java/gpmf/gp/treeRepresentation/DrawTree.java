@@ -1,6 +1,7 @@
 package gpmf.gp.treeRepresentation;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
@@ -28,6 +29,9 @@ public class DrawTree extends Application {
     double screenWidth = screenBounds.getMaxX();
     double screenHeight = screenBounds.getMaxY();
 
+    treeInstance.reset();
+    treeInstance.restructure();
+
     int[] silhouette = new int[treeInstance.getDepth()+1];
     for (int i = 0; i < silhouette.length; i++) silhouette[i] = 0;
 
@@ -51,7 +55,7 @@ public class DrawTree extends Application {
     } catch (Exception s) {
     }
 
-    // stage.show();
+    Platform.exit();
   }
 
   public static void draw(Tree tree) {

@@ -10,26 +10,14 @@ import gpmf.gp.treeGenerator.TreeElement;
 
 public class ConditionExpression extends Node {
 
-  private boolean isWhile;
-
-  public ConditionExpression(
-      String nodeType, int depth, Node parent, boolean isWhile, NodeTool nodeTool) {
+  public ConditionExpression(String nodeType, int depth, Node parent, NodeTool nodeTool) {
     this.setNodeType(nodeType);
     this.setDepth(depth);
     this.setParent(parent);
     this.setOffspring(0);
     this.setNodeTool(nodeTool);
 
-    this.setIsWhile(isWhile);
     this.setOperator(null);
-  }
-
-  public void setIsWhile(boolean While) {
-    this.isWhile = While;
-  }
-
-  public boolean getIsWhile() {
-    return this.isWhile;
   }
 
   @Override
@@ -48,22 +36,14 @@ public class ConditionExpression extends Node {
     this.setOperator(
         new Leaf(operatorTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
 
-    if (this.isWhile) {
-      Expression expression =
-          new Expression("ConstantExpression", this.getDepth() + 1, this, this.getNodeTool());
-      expression.setOperator(new Leaf("result", this.getDepth() + 2, this, this.getNodeTool()));
-      this.setLeftNode(expression);
-    } else {
-      String expressionNodeTypeSelection = this.getNodeTool().selectExpression(this.getDepth() + 1);
-      this.getNodeTool().addNodeNumber();
-      this.setLeftNode(
-          new Expression(
-              expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
-      this.getLeftNode().expand();
-      // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
-    }
-
     String expressionNodeTypeSelection = this.getNodeTool().selectExpression(this.getDepth() + 1);
+    this.getNodeTool().addNodeNumber();
+    this.setLeftNode(
+        new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
+    this.getLeftNode().expand();
+    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
+
+    expressionNodeTypeSelection = this.getNodeTool().selectExpression(this.getDepth() + 1);
     this.getNodeTool().addNodeNumber();
     this.setRightNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
@@ -82,11 +62,7 @@ public class ConditionExpression extends Node {
     this.getNodeTool().addNodeNumber();
     this.setLeftNode(
         new ConditionExpression(
-            conditionNodeTypeSelection,
-            this.getDepth() + 1,
-            this,
-            this.isWhile,
-            this.getNodeTool()));
+            conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getLeftNode().expand();
     // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
 
@@ -94,11 +70,7 @@ public class ConditionExpression extends Node {
     this.getNodeTool().addNodeNumber();
     this.setRightNode(
         new ConditionExpression(
-            conditionNodeTypeSelection,
-            this.getDepth() + 1,
-            this,
-            this.isWhile,
-            this.getNodeTool()));
+            conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
     // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
   }
@@ -110,11 +82,7 @@ public class ConditionExpression extends Node {
     this.getNodeTool().addNodeNumber();
     this.setRightNode(
         new ConditionExpression(
-            conditionNodeTypeSelection,
-            this.getDepth() + 1,
-            this,
-            this.isWhile,
-            this.getNodeTool()));
+            conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
     // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
   }
@@ -187,8 +155,7 @@ public class ConditionExpression extends Node {
   @Override
   public TreeElement clone(NodeTool nodeTool) {
     Node aux =
-        new ConditionExpression(
-            this.getNodeType(), this.getDepth(), this.getParent(), this.isWhile, nodeTool);
+        new ConditionExpression(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
     aux.setNodeNumber(this.getNodeNumber());
     ((ConditionExpression) aux)
         .setOperator(new Leaf(this.getOperator().getValue(), this.getDepth() + 1, this, nodeTool));
@@ -204,7 +171,7 @@ public class ConditionExpression extends Node {
     this.setDepth(depth);
     this.setNodeNumber(this.getNodeTool().getCurrentNodeNumber());
 
-    if (this.getLeftNode() != null && !this.isWhile) {
+    if (this.getLeftNode() != null) {
       this.getNodeTool().addNodeNumber();
       this.getLeftNode().restructure(depth + 1);
     }
@@ -217,7 +184,7 @@ public class ConditionExpression extends Node {
   @Override
   public void setNode(Node node, int nodeNumber) {
     boolean found = false;
-    if (this.getLeftNode() != null && !found && !this.isWhile) {
+    if (this.getLeftNode() != null && !found) {
       if (this.getLeftNode().getNodeNumber() == nodeNumber) {
         this.setLeftNode((Node) node.clone(this.getNodeTool()));
         found = true;
@@ -244,7 +211,7 @@ public class ConditionExpression extends Node {
       node = this;
       found = true;
     }
-    if (this.getLeftNode() != null && !found && !this.isWhile) {
+    if (this.getLeftNode() != null && !found) {
       auxNode = this.getLeftNode().getNode(nodeNumber);
       if (auxNode != null) {
         node = auxNode;
