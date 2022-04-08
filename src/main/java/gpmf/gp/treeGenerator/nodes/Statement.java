@@ -59,7 +59,6 @@ public class Statement extends Node {
     this.setRightNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
 
     if (!(this.getNodeTool().getCurrentNodeNumber() > this.getNodeTool().getMaxNodes()))
       if (this.getNodeTool().addNewStmtDecision()) {
@@ -69,7 +68,6 @@ public class Statement extends Node {
         this.nextNode =
             new Statement(statementNodeTypeSelection, this.getDepth(), this, this.getNodeTool());
         this.nextNode.expand();
-        // this.setOffspring(this.getOffspring()+this.getNextNode().getOffspring()+1);
       }
   }
 
@@ -80,7 +78,6 @@ public class Statement extends Node {
     this.setLeftNode(
         new Statement(statementNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getLeftNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
 
     String middleNodeTypeSelection = this.getNodeTool().selectConditionExpression();
     this.getNodeTool().addNodeNumber();
@@ -88,7 +85,6 @@ public class Statement extends Node {
         new ConditionExpression(
             middleNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getConditionNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getConditionNode().getOffspring()+1);
 
     if (this.getNodeTool().addElseStmtDecision()) {
       statementNodeTypeSelection = this.getNodeTool().selectStatement(this.getDepth() + 1);
@@ -96,7 +92,6 @@ public class Statement extends Node {
       this.setRightNode(
           new Statement(statementNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
       this.getRightNode().expand();
-      // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
     }
     if (!(this.getNodeTool().getCurrentNodeNumber() > this.getNodeTool().getMaxNodes()))
       if (this.getNodeTool().addNewStmtDecision()) {
@@ -105,17 +100,12 @@ public class Statement extends Node {
         this.setNextNode(
             new Statement(statementNodeTypeSelection, this.getDepth(), this, this.getNodeTool()));
         this.getNextNode().expand();
-        // this.setOffspring(this.getOffspring()+this.getNextNode().getOffspring()+1);
       }
   }
 
   @Override
   public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette) {
-    for (int i = 0; i < silhouette.length; i++) {
-      silhouette[i] += 50;
-    }
-
-    if (silhouette[this.getDepth()] > xEnd) xEnd = silhouette[this.getDepth()];
+    xEnd = silhouette[this.getDepth()];
 
     if (this.getOperator() != null)
       this.getOperator().draw(canvas, xEnd, yEnd, xEnd, yEnd + 100, silhouette);

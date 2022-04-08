@@ -109,5 +109,4 @@ public abstract class Node extends TreeElement {
   public Leaf getOperator() {
     return this.operator;
   }
-
 }

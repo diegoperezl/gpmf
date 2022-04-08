@@ -34,7 +34,6 @@ public class Tree {
     this.root = new Statement("AssignStmt", 0, root, nodeTool);
     root.expand();
     this.setOffspring(nodeTool.getCurrentNodeNumber());
-    // this.setOffspring(this.getOffspring()+this.getRoot().getOffspring()+1);
   }
 
   public void regenerate() {

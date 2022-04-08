@@ -39,15 +39,12 @@ public class Expression extends Node {
     this.setLeftNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getLeftNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
 
     expressionNodeTypeSelection = this.getNodeTool().selectExpression(this.getDepth() + 1);
     this.getNodeTool().addNodeNumber();
     this.setRightNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
-
   }
 
   public void unaryExpressionExpand() {
@@ -60,7 +57,6 @@ public class Expression extends Node {
     this.setRightNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
   }
 
   public void constantExpressionExpand() {
@@ -70,10 +66,17 @@ public class Expression extends Node {
 
   @Override
   public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette) {
-    for (int i = 0; i < silhouette.length; i++) {
-      silhouette[i] += 50;
+    xEnd = silhouette[this.getDepth()];
+
+    if ((this.getOperator().getValue().charAt(0) == 'p'
+            || this.getOperator().getValue().charAt(0) == 'q'
+            || this.getOperator().getValue().equals("One")
+            || this.getOperator().getValue().equals("Zero"))
+        && !this.getOperator().getValue().equals("pow")) {
+      for (int i = 0; i < silhouette.length; i++) {
+        silhouette[i] += 50;
+      }
     }
-    if (silhouette[this.getDepth()] > xEnd) xEnd = silhouette[this.getDepth()];
 
     if (this.getLeftNode() != null)
       this.getLeftNode().draw(canvas, xEnd, yEnd, xEnd, yEnd + 100, silhouette);

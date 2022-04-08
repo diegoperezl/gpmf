@@ -37,7 +37,13 @@ public class Leaf extends TreeElement {
 
   @Override
   public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette) {
-    if (silhouette[this.getDepth()] > xEnd) xEnd = silhouette[this.getDepth()];
+    xEnd = silhouette[this.getDepth()];
+    System.out.println("Profundidad: " + this.getDepth());
+
+    for (int i = 0; i < silhouette.length; i++) {
+      silhouette[i] += 50;
+      System.out.println(silhouette[i]);
+    }
 
     Line line = new Line(xStart, yStart, xEnd, yEnd);
     canvas.getChildren().add(line);
@@ -89,7 +95,7 @@ public class Leaf extends TreeElement {
 
   @Override
   public String toString() {
-    if ((this.value.charAt(0) == 'p' || this.value.charAt(0) == 'q') && this.value != "pow") {
+    if ((this.value.charAt(0) == 'p' || this.value.charAt(0) == 'q') && !this.value.equals("pow")) {
       return this.value + " (" + this.nodeTool.getFactor(this.value) + ")";
     } else return this.value;
   }

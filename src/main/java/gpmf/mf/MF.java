@@ -246,7 +246,7 @@ public class MF extends Recommender {
     return prediction;
   }
 
-  public Tree getTree(){
+  public Tree getTree() {
     return this.treeInstance;
   }
 

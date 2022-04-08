@@ -41,15 +41,12 @@ public class ConditionExpression extends Node {
     this.setLeftNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getLeftNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
 
     expressionNodeTypeSelection = this.getNodeTool().selectExpression(this.getDepth() + 1);
     this.getNodeTool().addNodeNumber();
     this.setRightNode(
         new Expression(expressionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
-
   }
 
   public void multiConditionExpressionExpand() {
@@ -64,7 +61,6 @@ public class ConditionExpression extends Node {
         new ConditionExpression(
             conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getLeftNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getLeftNode().getOffspring()+1);
 
     conditionNodeTypeSelection = this.getNodeTool().selectConditionExpression();
     this.getNodeTool().addNodeNumber();
@@ -72,7 +68,6 @@ public class ConditionExpression extends Node {
         new ConditionExpression(
             conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
   }
 
   public void negationExpressionExpand() {
@@ -84,15 +79,11 @@ public class ConditionExpression extends Node {
         new ConditionExpression(
             conditionNodeTypeSelection, this.getDepth() + 1, this, this.getNodeTool()));
     this.getRightNode().expand();
-    // this.setOffspring(this.getOffspring()+this.getRightNode().getOffspring()+1);
   }
 
   @Override
   public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette) {
-    for (int i = 0; i < silhouette.length; i++) {
-      silhouette[i] += 50;
-    }
-    if (silhouette[this.getDepth()] > xEnd) xEnd = silhouette[this.getDepth()];
+    xEnd = silhouette[this.getDepth()];
 
     if (this.getLeftNode() != null)
       this.getLeftNode().draw(canvas, xEnd, yEnd, xEnd, yEnd + 100, silhouette);

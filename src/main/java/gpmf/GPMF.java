@@ -307,8 +307,8 @@ public class GPMF extends Recommender {
     for (int k = 0; k < this.popSize; k++) {
       try {
         writer.write(scores.get(k) + ";");
-        if(!Double.isNaN(scores.get(k))){
-          totalScoresValue+=scores.get(k);
+        if (!Double.isNaN(scores.get(k))) {
+          totalScoresValue += scores.get(k);
           totalScoresCount++;
         }
       } catch (IOException e) {
@@ -316,11 +316,11 @@ public class GPMF extends Recommender {
       }
     }
 
-    previousMean = totalScoresValue/totalScoresCount;
+    previousMean = totalScoresValue / totalScoresCount;
 
     int finishCount = 0;
 
-    for (int i = 0; i < this.gens && finishCount<this.earlyStoppingCount; i++) {
+    for (int i = 0; i < this.gens && finishCount < this.earlyStoppingCount; i++) {
       try {
         this.newGeneration();
       } catch (ExecutionException e) {
@@ -335,8 +335,8 @@ public class GPMF extends Recommender {
       for (int k = 0; k < this.popSize; k++) {
         try {
           writer.write(scores.get(k) + ";");
-          if(!Double.isNaN(scores.get(k)) && !Double.isInfinite(scores.get(k))){
-            totalScoresValue+=scores.get(k);
+          if (!Double.isNaN(scores.get(k)) && !Double.isInfinite(scores.get(k))) {
+            totalScoresValue += scores.get(k);
             totalScoresCount++;
           }
         } catch (IOException e) {
@@ -344,17 +344,17 @@ public class GPMF extends Recommender {
         }
       }
 
-      double scoresMean = totalScoresValue/totalScoresCount;
-      if(Math.abs(scoresMean-previousMean)<this.earlyStoppingValue){
+      double scoresMean = totalScoresValue / totalScoresCount;
+      if (Math.abs(scoresMean - previousMean) < this.earlyStoppingValue) {
         finishCount++;
-      }else{
+      } else {
         finishCount = 0;
       }
 
       previousMean = scoresMean;
 
       try {
-        writer.write("\n");
+        writer.write(scoresMean + "\n");
         writer.flush();
       } catch (IOException e) {
         e.printStackTrace();
@@ -546,7 +546,8 @@ public class GPMF extends Recommender {
       paramsGrid.addFixedParam("numIters", this.numIters);
       paramsGrid.addFixedParam("seed", this.seed);
 
-      GridSearchCV gridSearchMF = new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
+      GridSearchCV gridSearchMF =
+          new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
 
       Trainer t = new Trainer(gridSearchMF, children.get(i), false);
       pool[i] = new Thread(t, String.valueOf(i));
@@ -694,7 +695,8 @@ public class GPMF extends Recommender {
       paramsGrid.addFixedParam("numIters", this.numIters);
       paramsGrid.addFixedParam("seed", this.seed);
 
-      GridSearchCV gridSearchCV = new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
+      GridSearchCV gridSearchCV =
+          new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
 
       Trainer t = new Trainer(gridSearchCV, population.get(i), false);
       pool[i] = new Thread(t, String.valueOf(i));

@@ -26,13 +26,12 @@ public class DrawTree extends Application {
     canvas.setStyle("-fx-background-color: white;");
 
     Rectangle2D screenBounds = Screen.getPrimary().getBounds();
-    double screenWidth = screenBounds.getMaxX();
-    double screenHeight = screenBounds.getMaxY();
 
     treeInstance.reset();
     treeInstance.restructure();
 
-    int[] silhouette = new int[treeInstance.getDepth()+1];
+    int[] silhouette = new int[treeInstance.getDepth() + 2];
+    System.out.println("Profundidad total: " + treeInstance.getDepth());
     for (int i = 0; i < silhouette.length; i++) silhouette[i] = 0;
 
     treeInstance.draw(canvas, 0, 0, 0, 50, silhouette);
