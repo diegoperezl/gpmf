@@ -18,6 +18,8 @@ public class ConditionExpression extends Node {
     this.setNodeTool(nodeTool);
 
     this.setOperator(null);
+
+    if (depth > super.getNodeTool().getDepth()) super.getNodeTool().setDepth(depth);
   }
 
   @Override

@@ -91,8 +91,8 @@ public class Tree {
     root.draw(canvas, xStart, yStart, xEnd, yEnd, silhouette);
   }
 
-  public void print() {
-    System.out.println(this.root.toString());
+  public String print() {
+    return this.root.toString();
   }
 
   public void setRand(Random rand) {

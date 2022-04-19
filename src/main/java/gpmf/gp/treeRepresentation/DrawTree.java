@@ -31,7 +31,7 @@ public class DrawTree extends Application {
     treeInstance.restructure();
 
     int[] silhouette = new int[treeInstance.getDepth() + 2];
-    System.out.println("Profundidad total: " + treeInstance.getDepth());
+
     for (int i = 0; i < silhouette.length; i++) silhouette[i] = 0;
 
     treeInstance.draw(canvas, 0, 0, 0, 50, silhouette);

@@ -22,6 +22,8 @@ public class Statement extends Node {
     this.setOperator(null);
     this.setConditionNode(null);
     this.setNextNode(null);
+
+    if (depth > super.getNodeTool().getDepth()) super.getNodeTool().setDepth(depth);
   }
 
   public void setNextNode(Node nextNode) {
@@ -120,7 +122,7 @@ public class Statement extends Node {
 
     Line line = new Line(xStart, yStart, xEnd, yEnd);
     canvas.getChildren().add(line);
-    Circle circle = new Circle(xStart, yStart, 20, Paint.valueOf("white"));
+    Circle circle = new Circle(xStart, yStart, 30, Paint.valueOf("white"));
     circle.toBack();
     canvas.getChildren().add(circle);
     Text txt = new Text(xEnd - 5, yEnd + 15, this.getNodeType());
@@ -310,23 +312,19 @@ public class Statement extends Node {
   public String toString() {
     String res = "";
 
-    for (int i = 0; i < this.getDepth(); i++) res += "\t";
-
     if (this.getNodeType() == "IFStmt") {
-      res += this.getNodeType() + " (" + this.getConditionNode().toString() + "){\n";
-      res += this.getLeftNode().toString() + "\n";
-      for (int i = 0; i < this.getDepth(); i++) res += "\t";
+      res += this.getNodeType() + " (" + this.getConditionNode().toString() + "){ ";
+      res += this.getLeftNode().toString();
       res += "}";
       if (this.getRightNode() != null) {
-        res += " else {\n";
-        res += this.getRightNode().toString() + "\n";
-        for (int i = 0; i < this.getDepth(); i++) res += "\t";
+        res += " else { ";
+        res += this.getRightNode().toString();
         res += "}";
       }
-      if (this.nextNode != null) res += "\n" + this.nextNode.toString();
+      if (this.nextNode != null) res += this.nextNode.toString();
     } else if (this.getNodeType() == "AssignStmt") {
-      res += "result " + this.getOperator().toString() + "= " + this.getRightNode().toString();
-      if (this.nextNode != null) res += "\n" + this.nextNode.toString();
+      res += "result " + this.getOperator().toString() + "= " + this.getRightNode().toString() + "; ";
+      if (this.nextNode != null) res += this.nextNode.toString();
     }
     return res;
   }

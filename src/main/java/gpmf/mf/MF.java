@@ -4,6 +4,7 @@ import es.upm.etsisi.cf4j.data.DataModel;
 import es.upm.etsisi.cf4j.data.Item;
 import es.upm.etsisi.cf4j.data.User;
 import es.upm.etsisi.cf4j.recommender.Recommender;
+import gpmf.Individual;
 import gpmf.gp.treeGenerator.Tree;
 import sym_derivation.symderivation.SymFunction;
 
@@ -25,11 +26,14 @@ public class MF extends Recommender {
   /** Number of iterations * */
   private int numIters;
 
+  /** Tree instance * */
+  private Tree treeInstance;
+
   /** SymFunction instance * */
   private SymFunction sf = null;
 
-  /** Tree instance * */
-  private Tree treeInstance;
+  /** Individual * */
+  private Individual individual;
 
   /** User latent factors matrix p * */
   private double[][] p;
@@ -45,11 +49,7 @@ public class MF extends Recommender {
    * contains the following keys:
    *
    * <ul>
-   *   <li><b>tree</b>: Tree value with the tree to evaluate.
-   *   <li><b>numFactors</b>: int value with the number of latent factors.
-   *   <li><b>numIters</b> int value with the number of iterations.
-   *   <li><b>regularization</b> double value with the regularization.
-   *   <li><b>learningRate</b> double value with the learning rate.
+   *   <li><b>individual</b>: Individual value with the tree, learningRate, regularization, numFactors and numIters.
    *   <li><b><em>seed</em></b> (optional): random seed for random numbers generation. If missing, *
    *       random value is used.
    * </ul>
@@ -60,11 +60,7 @@ public class MF extends Recommender {
   public MF(DataModel datamodel, Map<String, Object> params) {
     this(
         datamodel,
-        (Tree) params.get("tree"),
-        (int) params.get("numFactors"),
-        (int) params.get("numIters"),
-        (double) params.get("regularization"),
-        (double) params.get("learningRate"),
+        (Individual) params.get("individual"),
         params.containsKey("seed") ? (long) params.get("seed") : System.currentTimeMillis());
   }
 
@@ -72,26 +68,14 @@ public class MF extends Recommender {
    * Model constructor
    *
    * @param datamodel DataModel instance
-   * @param tree Tree instance
-   * @param numFactors Number of latent factors
-   * @param numIters Number of iterations
-   * @param regularization Regularization
-   * @param learningRate Learning rate
+   * @param individual Individual instance
    */
   public MF(
       DataModel datamodel,
-      Tree tree,
-      int numFactors,
-      int numIters,
-      double regularization,
-      double learningRate) {
+      Individual individual) {
     this(
         datamodel,
-        tree,
-        numFactors,
-        numIters,
-        regularization,
-        learningRate,
+        individual,
         System.currentTimeMillis());
   }
 
@@ -99,28 +83,21 @@ public class MF extends Recommender {
    * Model constructor
    *
    * @param datamodel DataModel instance
-   * @param tree Tree instance
-   * @param numFactors Number of latent factors
-   * @param numIters Number of iterations
-   * @param regularization Regularization
-   * @param learningRate Learning rate
+   * @param individual Individual instance
    * @param seed Seed for random numbers generation
    */
   public MF(
       DataModel datamodel,
-      Tree tree,
-      int numFactors,
-      int numIters,
-      double regularization,
-      double learningRate,
+      Individual individual,
       long seed) {
     super(datamodel);
 
-    this.numFactors = numFactors;
-    this.numIters = numIters;
-    this.regularization = regularization;
-    this.learningRate = learningRate;
-    this.treeInstance = tree;
+    this.treeInstance = individual.getTree();
+    this.numFactors = individual.getNumFactors();
+    this.numIters = individual.getNumIters();
+    this.regularization = individual.getRegularization();
+    this.learningRate = individual.getLearningRate();
+    this.individual = individual;
 
     this.seed = new Random(seed);
 

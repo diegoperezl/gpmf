@@ -16,6 +16,8 @@ public class Expression extends Node {
     this.setParent(parent);
     this.setOffspring(0);
     this.setNodeTool(nodeTool);
+
+    if (depth > super.getNodeTool().getDepth()) super.getNodeTool().setDepth(depth);
   }
 
   @Override
@@ -287,13 +289,13 @@ public class Expression extends Node {
     String res = "";
     if (this.getNodeType() == "BinaryExpression") {
       res +=
-          this.getLeftNode().toString()
+          "("+this.getLeftNode().toString()
               + " "
               + this.getOperator().getValue()
               + " "
-              + this.getRightNode().toString();
+              + this.getRightNode().toString() + ")";
     } else if (this.getNodeType() == "UnaryExpression") {
-      res += this.getOperator().getValue() + " " + this.getRightNode().toString();
+      res += "("+this.getOperator().getValue() + " " + this.getRightNode().toString() + ")";
     } else {
       if (this.getOperator() != null) res += this.getOperator().toString();
     }
