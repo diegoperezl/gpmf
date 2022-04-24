@@ -602,7 +602,7 @@ public class GPMF extends Recommender {
 
       Node mutation = null;
 
-      switch (treeInstance1NodeClass) {
+      switch (Objects.requireNonNull(treeInstance1NodeClass)) {
         case "Statement":
           String statementNodeTypeSelection = node.getNodeTool().selectStatement(0);
           mutation =
@@ -621,7 +621,9 @@ public class GPMF extends Recommender {
           break;
       }
 
-      mutation.expand();
+      if (mutation != null) {
+        mutation.expand();
+      }
 
       children.get(individualIndex).getTree().setNode(mutation, nodeMutation);
       children.get(individualIndex).getTree().reset();
