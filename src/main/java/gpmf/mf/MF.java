@@ -49,7 +49,8 @@ public class MF extends Recommender {
    * contains the following keys:
    *
    * <ul>
-   *   <li><b>individual</b>: Individual value with the tree, learningRate, regularization, numFactors and numIters.
+   *   <li><b>individual</b>: Individual value with the tree, learningRate, regularization,
+   *       numFactors and numIters.
    *   <li><b><em>seed</em></b> (optional): random seed for random numbers generation. If missing, *
    *       random value is used.
    * </ul>
@@ -70,13 +71,8 @@ public class MF extends Recommender {
    * @param datamodel DataModel instance
    * @param individual Individual instance
    */
-  public MF(
-      DataModel datamodel,
-      Individual individual) {
-    this(
-        datamodel,
-        individual,
-        System.currentTimeMillis());
+  public MF(DataModel datamodel, Individual individual) {
+    this(datamodel, individual, System.currentTimeMillis());
   }
 
   /**
@@ -86,10 +82,7 @@ public class MF extends Recommender {
    * @param individual Individual instance
    * @param seed Seed for random numbers generation
    */
-  public MF(
-      DataModel datamodel,
-      Individual individual,
-      long seed) {
+  public MF(DataModel datamodel, Individual individual, long seed) {
     super(datamodel);
 
     this.treeInstance = individual.getTree();
@@ -101,13 +94,11 @@ public class MF extends Recommender {
 
     this.seed = new Random(seed);
 
-    // users factors initialization
     this.p = new double[datamodel.getNumberOfUsers()][numFactors];
     for (User user : super.getDataModel().getUsers()) {
       p[user.getUserIndex()] = this.random(this.numFactors, 0, 1);
     }
 
-    // items factors initialization
     this.q = new double[datamodel.getNumberOfItems()][numFactors];
     for (Item item : super.getDataModel().getItems()) {
       q[item.getItemIndex()] = this.random(this.numFactors, 0, 1);
@@ -122,7 +113,6 @@ public class MF extends Recommender {
 
     for (int iter = 1; iter <= this.numIters; iter++) {
 
-      // compute gradient
       double[][] dp = new double[super.getDataModel().getNumberOfUsers()][this.numFactors];
       double[][] dq = new double[super.getDataModel().getNumberOfItems()][this.numFactors];
 
@@ -169,14 +159,12 @@ public class MF extends Recommender {
         }
       }
 
-      // update users factors
       for (User user : super.getDataModel().getUsers()) {
         for (int k = 0; k < this.numFactors; k++) {
           p[user.getUserIndex()][k] += dp[user.getUserIndex()][k];
         }
       }
 
-      // update items factors
       for (Item item : super.getDataModel().getItems()) {
         for (int k = 0; k < this.numFactors; k++) {
           q[item.getItemIndex()][k] += dq[item.getItemIndex()][k];

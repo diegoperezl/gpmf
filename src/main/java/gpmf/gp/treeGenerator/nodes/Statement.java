@@ -323,7 +323,8 @@ public class Statement extends Node {
       }
       if (this.nextNode != null) res += this.nextNode.toString();
     } else if (this.getNodeType() == "AssignStmt") {
-      res += "result " + this.getOperator().toString() + "= " + this.getRightNode().toString() + "; ";
+      res +=
+          "result " + this.getOperator().toString() + "= " + this.getRightNode().toString() + "; ";
       if (this.nextNode != null) res += this.nextNode.toString();
     }
     return res;

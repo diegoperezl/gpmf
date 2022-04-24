@@ -94,7 +94,6 @@ public class Leaf extends TreeElement {
   @Override
   public String toString() {
     if ((this.value.charAt(0) == 'p' || this.value.charAt(0) == 'q') && !this.value.equals("pow")) {
-      //return this.value + " (" + this.nodeTool.getFactor(this.value) + ")";
       return this.value;
     } else return this.value;
   }
