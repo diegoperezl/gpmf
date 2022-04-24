@@ -62,16 +62,16 @@ public class GPMF extends Recommender {
   private final long seed;
 
   /** HashMap of population trees */
-  private Map<Integer, Individual> population = new HashMap<Integer, Individual>();
+  private final Map<Integer, Individual> population = new HashMap<>();
 
   /** HashMap of children trees */
-  private Map<Integer, Individual> children = new HashMap<Integer, Individual>();
+  private final Map<Integer, Individual> children = new HashMap<>();
 
   /** HashMap of population scores */
-  private Map<Integer, Double> scores = new HashMap<Integer, Double>();
+  private final Map<Integer, Double> scores = new HashMap<>();
 
   /** HashMap of children scores */
-  private Map<Integer, Double> childrenScores = new HashMap<Integer, Double>();
+  private final Map<Integer, Double> childrenScores = new HashMap<>();
 
   /** MF instance of best tree */
   private volatile MF bestMF = null;
@@ -241,9 +241,7 @@ public class GPMF extends Recommender {
 
       try {
         this.newGeneration();
-      } catch (ExecutionException e) {
-        e.printStackTrace();
-      } catch (InterruptedException e) {
+      } catch (ExecutionException | InterruptedException e) {
         e.printStackTrace();
       }
 
@@ -271,11 +269,7 @@ public class GPMF extends Recommender {
       printer.printGenerationMetrics(
           population, scoreMedian, maeScore, mseScore, this.invalidChildren, i);
 
-      if (i == this.gens - 1 || finishCount == this.earlyStoppingCount) {
-        printer.printGenerationEnd(true);
-      } else {
-        printer.printGenerationEnd(false);
-      }
+      printer.printGenerationEnd(i == this.gens - 1 || finishCount == this.earlyStoppingCount);
 
       System.out.println(
           "\nGeneration number "
@@ -340,15 +334,15 @@ public class GPMF extends Recommender {
         GridSearchCV gridSearchCV =
             new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
 
-        Trainer t = new Trainer(gridSearchCV, population.get(i), false, this.rand);
+        Trainer t = new Trainer(gridSearchCV, population.get(i));
         pool[poolIndex] = new Thread(t, String.valueOf(i));
         pool[poolIndex].start();
         poolIndex++;
       }
     }
 
-    for (int i = 0; i < pool.length; i++) {
-      pool[i].join();
+    for (Thread thread : pool) {
+      thread.join();
     }
 
     for (Map.Entry<Integer, Individual> individual : population.entrySet()) {
@@ -398,9 +392,7 @@ public class GPMF extends Recommender {
         trainGeneration(train, poolSize);
       } while (!cleanFirstGeneration);
 
-    } catch (ExecutionException e) {
-      e.printStackTrace();
-    } catch (InterruptedException e) {
+    } catch (ExecutionException | InterruptedException e) {
       e.printStackTrace();
     }
   }
@@ -409,10 +401,10 @@ public class GPMF extends Recommender {
     double median = 0;
     HashMap<Integer, Double> sorted = sortScoresByValue((HashMap<Integer, Double>) scores);
 
-    Iterator it = sorted.entrySet().iterator();
+    Iterator<Map.Entry<Integer, Double>> it = sorted.entrySet().iterator();
     int position = 0;
     while (it.hasNext()) {
-      Map.Entry<Integer, Double> entry = (Map.Entry) it.next();
+      Map.Entry<Integer, Double> entry = it.next();
       if (position == popSize / 2 || position == popSize / 2 + 1) {
         if (!(Double.isNaN(entry.getValue()) || Double.isInfinite(entry.getValue())))
           median += entry.getValue();
@@ -437,9 +429,7 @@ public class GPMF extends Recommender {
   private void selectParents(int[] parents1, int[] parents2) {
     int[] gladiators = new int[4];
     for (int i = 0; i < this.numChildren / 2; i++) {
-      for (int j = 0; j < gladiators.length; j++) {
-        gladiators[j] = -1;
-      }
+      Arrays.fill(gladiators, -1);
       gladiators[0] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
       do {
         gladiators[1] = (int) Math.floor(this.rand.nextDouble() * this.popSize);
@@ -485,14 +475,14 @@ public class GPMF extends Recommender {
                 Math.floor(
                     (population.get(parents1[i]).getNumIters()
                             + population.get(parents2[i]).getNumIters())
-                        / 2);
+                        >> 1);
 
         int numFactorsCross =
             (int)
                 Math.floor(
                     (population.get(parents1[i]).getNumFactors()
                             + population.get(parents2[i]).getNumFactors())
-                        / 2);
+                        >> 1);
 
         this.children.put(
             i * 2,
@@ -528,8 +518,8 @@ public class GPMF extends Recommender {
         Node node2 = null;
         String treeInstance1NodeClass = null;
         String treeInstance2NodeClass = null;
-        int nodeCrossover1 = -1;
-        int nodeCrossover2 = -1;
+        int nodeCrossover1;
+        int nodeCrossover2;
 
         do {
           nodeCrossover1 = (int) Math.floor(this.rand.nextDouble() * numNodesParent1 + 1);
@@ -538,16 +528,16 @@ public class GPMF extends Recommender {
           try {
             node1 = children.get(i * 2).getTree().getNode(nodeCrossover1);
             treeInstance1NodeClass = node1.getNodeClass();
-          } catch (Exception e) {
+          } catch (Exception ignored) {
           }
 
           try {
             node2 = children.get(i * 2 + 1).getTree().getNode(nodeCrossover2);
             treeInstance2NodeClass = node2.getNodeClass();
-          } catch (Exception e) {
+          } catch (Exception ignored) {
           }
 
-        } while (treeInstance1NodeClass != treeInstance2NodeClass
+        } while (!Objects.equals(treeInstance1NodeClass, treeInstance2NodeClass)
             || node1 == null
             || node2 == null);
 
@@ -596,7 +586,7 @@ public class GPMF extends Recommender {
         try {
           node = children.get(individualIndex).getTree().getNode(nodeMutation);
           treeInstance1NodeClass = node.getNodeClass();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
       } while (node == null);
 
@@ -700,7 +690,7 @@ public class GPMF extends Recommender {
       GridSearchCV gridSearchMF =
           new GridSearchCV(datamodel, paramsGrid, MF.class, MSE.class, 5, this.seed);
 
-      Trainer t = new Trainer(gridSearchMF, children.get(i), true, this.rand);
+      Trainer t = new Trainer(gridSearchMF, children.get(i));
       pool[i] = new Thread(t, String.valueOf(i));
       pool[i].start();
     }
@@ -717,10 +707,10 @@ public class GPMF extends Recommender {
   }
 
   private void selectSurvivors() {
-    HashMap<Integer, Double> totalScores = new HashMap<Integer, Double>();
-    HashMap<Integer, Individual> totalPopulation = new HashMap<Integer, Individual>();
-    HashMap<Integer, Double> finalScores = new HashMap<Integer, Double>();
-    HashMap<Integer, Individual> finalPopulation = new HashMap<Integer, Individual>();
+    HashMap<Integer, Double> totalScores = new HashMap<>();
+    HashMap<Integer, Individual> totalPopulation = new HashMap<>();
+    HashMap<Integer, Double> finalScores = new HashMap<>();
+    HashMap<Integer, Individual> finalPopulation = new HashMap<>();
     int[] inserted = new int[this.popSize];
 
     for (int i = 0; i < this.popSize; i++) inserted[i] = -1;
@@ -746,7 +736,7 @@ public class GPMF extends Recommender {
       boolean found = false;
       for (int j = 0; j < probabilities.length && !found; j++) {
         int finalJ = j;
-        if (selection < probabilities[j] && !IntStream.of(inserted).anyMatch(x -> x == finalJ)) {
+        if (selection < probabilities[j] && IntStream.of(inserted).noneMatch(x -> x == finalJ)) {
           population.put(i, finalPopulation.get(j));
           scores.put(i, finalScores.get(j));
           inserted[i] = j;
@@ -762,12 +752,12 @@ public class GPMF extends Recommender {
       int[] inserted,
       HashMap<Integer, Double> sorted) {
 
-    Iterator it = sorted.entrySet().iterator();
-    Map.Entry<Integer, Double> elite1 = (Map.Entry) it.next();
+    Iterator<Map.Entry<Integer, Double>> it = sorted.entrySet().iterator();
+    Map.Entry<Integer, Double> elite1 = it.next();
     population.put(0, totalPopulation.get(elite1.getKey()));
     scores.put(0, totalScores.get(elite1.getKey()));
 
-    Map.Entry<Integer, Double> elite2 = (Map.Entry) it.next();
+    Map.Entry<Integer, Double> elite2 = it.next();
     population.put(1, totalPopulation.get(elite2.getKey()));
     scores.put(1, totalScores.get(elite2.getKey()));
 
@@ -787,34 +777,32 @@ public class GPMF extends Recommender {
     int totalSize = this.popSize + this.numChildren;
     double[] probabilities = new double[totalSize];
 
-    Iterator it = sorted.entrySet().iterator();
+    Iterator<Map.Entry<Integer, Double>> it = sorted.entrySet().iterator();
     while (it.hasNext()) {
-      Map.Entry<Integer, Double> entry = (Map.Entry) it.next();
+      Map.Entry<Integer, Double> entry = it.next();
       if (!(Double.isNaN(entry.getValue()) || Double.isInfinite(entry.getValue())))
         worstValue = entry.getValue();
     }
 
     it = sorted.entrySet().iterator();
     while (it.hasNext()) {
-      Map.Entry<Integer, Double> entry = (Map.Entry) it.next();
+      Map.Entry<Integer, Double> entry = it.next();
       if (!(Double.isNaN(entry.getValue()) || Double.isInfinite(entry.getValue())))
         N += (entry.getValue() - worstValue);
       else totalSize--;
     }
 
-    it = totalScores.entrySet().iterator();
+    totalScores.entrySet().iterator();
     int k = 0;
     for (int i = 0; i < totalScores.size(); i++) {
       if (!(Double.isNaN(totalScores.get(i)) || Double.isInfinite(totalScores.get(i)))) {
         if (k == 0) {
           probabilities[k] = (totalScores.get(i) - worstValue) / N;
-          finalScores.put(k, totalScores.get(i));
-          finalPopulation.put(k, totalPopulation.get(i));
         } else {
           probabilities[k] = probabilities[k - 1] + ((totalScores.get(i) - worstValue) / N);
-          finalScores.put(k, totalScores.get(i));
-          finalPopulation.put(k, totalPopulation.get(i));
         }
+        finalScores.put(k, totalScores.get(i));
+        finalPopulation.put(k, totalPopulation.get(i));
         k++;
       }
     }
@@ -822,39 +810,12 @@ public class GPMF extends Recommender {
   }
 
   private HashMap<Integer, Double> sortScoresByValue(HashMap<Integer, Double> hm) {
-    List<Map.Entry<Integer, Double>> list =
-        new LinkedList<Map.Entry<Integer, Double>>(hm.entrySet());
+    List<Map.Entry<Integer, Double>> list = new LinkedList<>(hm.entrySet());
 
-    Collections.sort(
-        list,
-        new Comparator<Map.Entry<Integer, Double>>() {
-          public int compare(Map.Entry<Integer, Double> o1, Map.Entry<Integer, Double> o2) {
-            return (o1.getValue()).compareTo(o2.getValue());
-          }
-        });
+    list.sort(Map.Entry.comparingByValue());
 
-    HashMap<Integer, Double> temp = new LinkedHashMap<Integer, Double>();
+    HashMap<Integer, Double> temp = new LinkedHashMap<>();
     for (Map.Entry<Integer, Double> aa : list) {
-      temp.put(aa.getKey(), aa.getValue());
-    }
-    return temp;
-  }
-
-  private HashMap<Integer, Tree> sortPopulationByValue(HashMap<Integer, Tree> hm) {
-    List<Map.Entry<Integer, Tree>> list =
-        new LinkedList<Map.Entry<Integer, Tree>>(
-            (Collection<? extends Map.Entry<Integer, Tree>>) hm.entrySet());
-
-    Collections.sort(
-        list,
-        new Comparator<Map.Entry<Integer, Tree>>() {
-          public int compare(Map.Entry<Integer, Tree> o1, Map.Entry<Integer, Tree> o2) {
-            return (o1.getValue().toString()).compareTo(o2.getValue().toString());
-          }
-        });
-
-    HashMap<Integer, Tree> temp = new LinkedHashMap<Integer, Tree>();
-    for (Map.Entry<Integer, Tree> aa : list) {
       temp.put(aa.getKey(), aa.getValue());
     }
     return temp;
@@ -865,20 +826,16 @@ class Trainer implements Runnable {
 
   private final GridSearchCV gridSearchCV;
   private final Individual individual;
-  private final boolean isChild;
-  private final Random rand;
 
-  Trainer(GridSearchCV gridSearchCV, Individual individual, boolean isChild, Random rand) {
+  Trainer(GridSearchCV gridSearchCV, Individual individual) {
     this.gridSearchCV = gridSearchCV;
     this.individual = individual;
-    this.isChild = isChild;
-    this.rand = rand;
   }
 
   @Override
   public void run() {
     long startTime = System.currentTimeMillis();
-    double mse = Double.POSITIVE_INFINITY;
+    double mse;
 
     try {
       this.gridSearchCV.fit();
