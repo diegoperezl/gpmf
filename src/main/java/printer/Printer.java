@@ -104,7 +104,7 @@ public class Printer {
       writerJSON.write("\t\t\"invalidChildren\": " + invalidChildren + ",\n");
       writerJSON.write("\t\t\"bestScore\": " + population.get(0).getScore() + ",\n");
       if (Double.isNaN(maeScore)) writerJSON.write("\t\t\"bestMAEScoreTest\": null,\n");
-      else writerJSON.write("\t\t\"bestMSEScoreTest\": " + +maeScore + ",\n");
+      else writerJSON.write("\t\t\"bestMAEScoreTest\": " + +maeScore + ",\n");
       if (Double.isNaN(mseScore)) writerJSON.write("\t\t\"bestMSEScoreTest\": null,\n");
       else writerJSON.write("\t\t\"bestMSEScoreTest\": " + +mseScore + ",\n");
       writerJSON.write("\t\t\"bestScoreIndividualId\": " + population.get(0).getId() + "\n");
