@@ -24,12 +24,16 @@ public class ConditionExpression extends Node {
 
   @Override
   public void expand() {
-    if (this.getNodeType() == "ComparisonExpression") {
-      comparisonExpressionExpand();
-    } else if (this.getNodeType() == "MultiConditionExpression") {
-      multiConditionExpressionExpand();
-    } else if (this.getNodeType() == "NegationExpression") {
-      negationExpressionExpand();
+    switch (this.getNodeType()) {
+      case "ComparisonExpression":
+        comparisonExpressionExpand();
+        break;
+      case "MultiConditionExpression":
+        multiConditionExpressionExpand();
+        break;
+      case "NegationExpression":
+        negationExpressionExpand();
+        break;
     }
   }
 
@@ -113,44 +117,49 @@ public class ConditionExpression extends Node {
   @Override
   public double eval() {
     double res = 1.0;
-    if (this.getNodeType() == "ComparisonExpression") {
-      if (this.getLeftNode() != null && this.getRightNode() != null)
-        switch (this.getOperator().getValue()) {
-          case "<":
-            if (this.getLeftNode().eval() < this.getRightNode().eval()) res = 0.0;
-            break;
-          case ">":
-            if (this.getLeftNode().eval() > this.getRightNode().eval()) res = 0.0;
-            break;
-          case "<=":
-            if (this.getLeftNode().eval() <= this.getRightNode().eval()) res = 0.0;
-            break;
-          case ">=":
-            if (this.getLeftNode().eval() >= this.getRightNode().eval()) res = 0.0;
-            break;
-        }
-    } else if (this.getNodeType() == "MultiCOnditionExpression") {
-      if (getLeftNode() != null && getRightNode() != null)
-        switch (this.getOperator().getValue()) {
-          case "&&":
-            if (this.getLeftNode().eval() == 0.0 && this.getRightNode().eval() == 0.0) res = 0.0;
-            break;
-          case "||":
-            if (this.getLeftNode().eval() == 0.0 || this.getRightNode().eval() == 0.0) res = 0.0;
-            break;
-        }
-    } else if (this.getNodeType() == "NegationExpression")
-      if (getRightNode() != null) if (this.getRightNode().eval() == 1.0) res = 0.0;
+    switch (this.getNodeType()) {
+      case "ComparisonExpression":
+        if (this.getLeftNode() != null && this.getRightNode() != null)
+          switch (this.getOperator().getValue()) {
+            case "<":
+              if (this.getLeftNode().eval() < this.getRightNode().eval()) res = 0.0;
+              break;
+            case ">":
+              if (this.getLeftNode().eval() > this.getRightNode().eval()) res = 0.0;
+              break;
+            case "<=":
+              if (this.getLeftNode().eval() <= this.getRightNode().eval()) res = 0.0;
+              break;
+            case ">=":
+              if (this.getLeftNode().eval() >= this.getRightNode().eval()) res = 0.0;
+              break;
+          }
+        break;
+      case "MultiCOnditionExpression":
+        if (getLeftNode() != null && getRightNode() != null)
+          switch (this.getOperator().getValue()) {
+            case "&&":
+              if (this.getLeftNode().eval() == 0.0 && this.getRightNode().eval() == 0.0) res = 0.0;
+              break;
+            case "||":
+              if (this.getLeftNode().eval() == 0.0 || this.getRightNode().eval() == 0.0) res = 0.0;
+              break;
+          }
+        break;
+      case "NegationExpression":
+        if (getRightNode() != null) if (this.getRightNode().eval() == 1.0) res = 0.0;
+        break;
+    }
 
     return res;
   }
 
   @Override
   public TreeElement clone(NodeTool nodeTool) {
-    Node aux =
-        new ConditionExpression(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
+    ConditionExpression aux;
+    aux = new ConditionExpression(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
     aux.setNodeNumber(this.getNodeNumber());
-    ((ConditionExpression) aux)
+    aux
         .setOperator(new Leaf(this.getOperator().getValue(), this.getDepth() + 1, this, nodeTool));
     if (this.getLeftNode() != null) aux.setLeftNode((Node) this.getLeftNode().clone(nodeTool));
     if (this.getRightNode() != null) aux.setRightNode((Node) this.getRightNode().clone(nodeTool));
@@ -177,7 +186,7 @@ public class ConditionExpression extends Node {
   @Override
   public void setNode(Node node, int nodeNumber) {
     boolean found = false;
-    if (this.getLeftNode() != null && !found) {
+    if (this.getLeftNode() != null) {
       if (this.getLeftNode().getNodeNumber() == nodeNumber) {
         this.setLeftNode((Node) node.clone(this.getNodeTool()));
         found = true;
@@ -188,7 +197,6 @@ public class ConditionExpression extends Node {
     if (this.getRightNode() != null && !found) {
       if (this.getRightNode().getNodeNumber() == nodeNumber) {
         this.setRightNode((Node) node.clone(this.getNodeTool()));
-        found = true;
       } else {
         this.getRightNode().setNode(node, nodeNumber);
       }
@@ -198,7 +206,7 @@ public class ConditionExpression extends Node {
   @Override
   public Node getNode(int nodeNumber) {
     Node node = null;
-    Node auxNode = null;
+    Node auxNode;
     boolean found = false;
     if (this.getNodeNumber() == nodeNumber) {
       node = this;
@@ -215,7 +223,6 @@ public class ConditionExpression extends Node {
       auxNode = this.getRightNode().getNode(nodeNumber);
       if (auxNode != null) {
         node = auxNode;
-        found = true;
       }
     }
     return node;
@@ -230,14 +237,14 @@ public class ConditionExpression extends Node {
   public String toString() {
     String res = "";
 
-    if (this.getNodeType() == "ComparisonExpression") {
+    if (this.getNodeType().equals("ComparisonExpression")) {
       res +=
           this.getLeftNode().toString()
               + " "
               + this.getOperator()
               + " "
               + this.getRightNode().toString();
-    } else if (this.getNodeType() == "MultiConditionExpression") {
+    } else if (this.getNodeType().equals("MultiConditionExpression")) {
       res +=
           this.getLeftNode().toString()
               + " "
