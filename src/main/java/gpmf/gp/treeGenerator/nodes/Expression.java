@@ -22,12 +22,16 @@ public class Expression extends Node {
 
   @Override
   public void expand() {
-    if (this.getNodeType() == "BinaryExpression") {
-      binaryExpressionExpand();
-    } else if (this.getNodeType() == "UnaryExpression") {
-      unaryExpressionExpand();
-    } else if (this.getNodeType() == "ConstantExpression") {
-      constantExpressionExpand();
+    switch (this.getNodeType()) {
+      case "BinaryExpression":
+        binaryExpressionExpand();
+        break;
+      case "UnaryExpression":
+        unaryExpressionExpand();
+        break;
+      case "ConstantExpression":
+        constantExpressionExpand();
+        break;
     }
   }
 
@@ -101,57 +105,61 @@ public class Expression extends Node {
   @Override
   public String getPrefix(String currentPrefix) {
     String res = "";
-    if (this.getNodeType() == "BinaryExpression") {
-      if (this.getLeftNode() != null && this.getRightNode() != null && this.getOperator() != null) {
-        switch (this.getOperator().getValue()) {
-          case "+":
-            res +=
-                "+ " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
-            break;
-          case "-":
-            res +=
-                "- " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
-            break;
-          case "*":
-            res +=
-                "* " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
-            break;
-          case "pow":
-            res +=
-                "pow "
-                    + this.getLeftNode().getPrefix(res)
-                    + " "
-                    + this.getRightNode().getPrefix(res);
-            break;
+    switch (this.getNodeType()) {
+      case "BinaryExpression":
+        if (this.getLeftNode() != null && this.getRightNode() != null && this.getOperator() != null) {
+          switch (this.getOperator().getValue()) {
+            case "+":
+              res +=
+                      "+ " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
+              break;
+            case "-":
+              res +=
+                      "- " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
+              break;
+            case "*":
+              res +=
+                      "* " + this.getLeftNode().getPrefix(res) + " " + this.getRightNode().getPrefix(res);
+              break;
+            case "pow":
+              res +=
+                      "pow "
+                              + this.getLeftNode().getPrefix(res)
+                              + " "
+                              + this.getRightNode().getPrefix(res);
+              break;
+          }
         }
-      }
-    } else if (this.getNodeType() == "UnaryExpression") {
-      if (this.getRightNode() != null) {
-        switch (this.getOperator().getValue()) {
-          case "cos":
-            res += "cos " + this.getRightNode().getPrefix(res);
-            break;
-          case "sin":
-            res += "sin " + this.getRightNode().getPrefix(res);
-            break;
-          case "atan":
-            res += "atan " + this.getRightNode().getPrefix(res);
-            break;
-          case "exp":
-            res += "exp " + this.getRightNode().getPrefix(res);
-            break;
-          case "log":
-            res += "log " + this.getRightNode().getPrefix(res);
-            break;
-          case "inv":
-            res += "inv " + this.getRightNode().getPrefix(res);
-            break;
+        break;
+      case "UnaryExpression":
+        if (this.getRightNode() != null) {
+          switch (this.getOperator().getValue()) {
+            case "cos":
+              res += "cos " + this.getRightNode().getPrefix(res);
+              break;
+            case "sin":
+              res += "sin " + this.getRightNode().getPrefix(res);
+              break;
+            case "atan":
+              res += "atan " + this.getRightNode().getPrefix(res);
+              break;
+            case "exp":
+              res += "exp " + this.getRightNode().getPrefix(res);
+              break;
+            case "log":
+              res += "log " + this.getRightNode().getPrefix(res);
+              break;
+            case "inv":
+              res += "inv " + this.getRightNode().getPrefix(res);
+              break;
+          }
         }
-      }
-    } else if (this.getNodeType() == "ConstantExpression") {
-      if (this.getOperator() != null) {
-        res += this.getOperator().getPrefix(res);
-      }
+        break;
+      case "ConstantExpression":
+        if (this.getOperator() != null) {
+          res += this.getOperator().getPrefix(res);
+        }
+        break;
     }
 
     return res;
@@ -160,56 +168,61 @@ public class Expression extends Node {
   @Override
   public double eval() {
     double res = 0.0;
-    if (this.getNodeType() == "BinaryExpression") {
-      if (this.getLeftNode() != null && this.getRightNode() != null)
-        switch (this.getOperator().getValue()) {
-          case "+":
-            res = this.getLeftNode().eval() + this.getRightNode().eval();
-            break;
-          case "-":
-            res = this.getLeftNode().eval() - this.getRightNode().eval();
-            break;
-          case "*":
-            res = this.getLeftNode().eval() * this.getRightNode().eval();
-            break;
-          case "^":
-            res = Math.pow(this.getLeftNode().eval(), this.getRightNode().eval());
-            break;
-        }
-    } else if (this.getNodeType() == "UnaryExpression") {
-      if (getRightNode() != null)
-        switch (this.getOperator().getValue()) {
-          case "cos":
-            res = Math.cos(this.getRightNode().eval());
-            break;
-          case "sin":
-            res = Math.sin(this.getRightNode().eval());
-            break;
-          case "atan":
-            res = Math.atan(this.getRightNode().eval());
-            break;
-          case "exp":
-            res = Math.exp(this.getRightNode().eval());
-            break;
-          case "log":
-            res = Math.log(this.getRightNode().eval());
-            break;
-          case "inv":
-            res = 1 / this.getRightNode().eval();
-            break;
-        }
-    } else if (this.getNodeType() == "ConstantExpression")
-      if (this.getOperator() != null) res = this.getOperator().eval();
+    switch (this.getNodeType()) {
+      case "BinaryExpression":
+        if (null != this.getLeftNode() && this.getRightNode() != null)
+          switch (this.getOperator().getValue()) {
+            case "+":
+              res = this.getLeftNode().eval() + this.getRightNode().eval();
+              break;
+            case "-":
+              res = this.getLeftNode().eval() - this.getRightNode().eval();
+              break;
+            case "*":
+              res = this.getLeftNode().eval() * this.getRightNode().eval();
+              break;
+            case "^":
+              res = Math.pow(this.getLeftNode().eval(), this.getRightNode().eval());
+              break;
+          }
+        break;
+      case "UnaryExpression":
+        if (getRightNode() != null)
+          switch (this.getOperator().getValue()) {
+            case "cos":
+              res = Math.cos(this.getRightNode().eval());
+              break;
+            case "sin":
+              res = Math.sin(this.getRightNode().eval());
+              break;
+            case "atan":
+              res = Math.atan(this.getRightNode().eval());
+              break;
+            case "exp":
+              res = Math.exp(this.getRightNode().eval());
+              break;
+            case "log":
+              res = Math.log(this.getRightNode().eval());
+              break;
+            case "inv":
+              res = 1 / this.getRightNode().eval();
+              break;
+          }
+        break;
+      case "ConstantExpression":
+        if (this.getOperator() != null) res = this.getOperator().eval();
+        break;
+    }
 
     return res;
   }
 
   @Override
   public TreeElement clone(NodeTool nodeTool) {
-    Node aux = new Expression(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
+    Expression aux = new Expression(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
     aux.setNodeNumber(this.getNodeNumber());
     if (this.getOperator() != null)
-      ((Expression) aux)
+      aux
           .setOperator(new Leaf(this.getOperator().getValue(), this.getDepth() + 1, aux, nodeTool));
     if (this.getLeftNode() != null) aux.setLeftNode((Node) this.getLeftNode().clone(nodeTool));
     if (this.getRightNode() != null) aux.setRightNode((Node) this.getRightNode().clone(nodeTool));
@@ -235,7 +248,7 @@ public class Expression extends Node {
   @Override
   public void setNode(Node node, int nodeNumber) {
     boolean found = false;
-    if (this.getLeftNode() != null && !found) {
+    if (this.getLeftNode() != null) {
       if (this.getLeftNode().getNodeNumber() == nodeNumber) {
         this.setLeftNode((Node) node.clone(this.getNodeTool()));
         found = true;
@@ -243,10 +256,9 @@ public class Expression extends Node {
         this.getLeftNode().setNode(node, nodeNumber);
       }
     }
-    if (this.getRightNode() != null && !found) {
+    if ((this.getRightNode() != null) && !found) {
       if (this.getRightNode().getNodeNumber() == nodeNumber) {
         this.setRightNode((Node) node.clone(this.getNodeTool()));
-        found = true;
       } else {
         this.getRightNode().setNode(node, nodeNumber);
       }
@@ -256,7 +268,7 @@ public class Expression extends Node {
   @Override
   public Node getNode(int nodeNumber) {
     Node node = null;
-    Node auxNode = null;
+    Node auxNode;
     boolean found = false;
     if (this.getNodeNumber() == nodeNumber) {
       node = this;
@@ -273,7 +285,6 @@ public class Expression extends Node {
       auxNode = this.getRightNode().getNode(nodeNumber);
       if (auxNode != null) {
         node = auxNode;
-        found = true;
       }
     }
     return node;
@@ -287,7 +298,7 @@ public class Expression extends Node {
   @Override
   public String toString() {
     String res = "";
-    if (this.getNodeType() == "BinaryExpression") {
+    if (this.getNodeType().equals("BinaryExpression")) {
       res +=
           "("
               + this.getLeftNode().toString()
@@ -296,7 +307,7 @@ public class Expression extends Node {
               + " "
               + this.getRightNode().toString()
               + ")";
-    } else if (this.getNodeType() == "UnaryExpression") {
+    } else if (this.getNodeType().equals("UnaryExpression")) {
       res += "(" + this.getOperator().getValue() + " " + this.getRightNode().toString() + ")";
     } else {
       if (this.getOperator() != null) res += this.getOperator().toString();

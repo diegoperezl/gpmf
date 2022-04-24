@@ -4,6 +4,7 @@ import gpmf.Individual;
 import gpmf.gp.treeGenerator.Tree;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -23,8 +24,8 @@ public class Printer {
       String fileDateJSON = new SimpleDateFormat("yyyyMMddHHmm'.json'").format(new Date());
       outJSON = new FileOutputStream("scores/json" + fileDateJSON);
 
-      writerCSV = new OutputStreamWriter(outCSV, "UTF-8");
-      writerJSON = new OutputStreamWriter(outJSON, "UTF-8");
+      writerCSV = new OutputStreamWriter(outCSV, StandardCharsets.UTF_8);
+      writerJSON = new OutputStreamWriter(outJSON, StandardCharsets.UTF_8);
 
       writerJSON.write("[\n");
     } catch (IOException e) {

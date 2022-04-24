@@ -15,10 +15,10 @@ public abstract class Node extends TreeElement {
 
   private NodeTool nodeTool;
 
-  private String[] binaryOperators = {"+", "-", "*", "pow"};
-  private String[] unaryOperators = {"cos", "sin", "atan", "exp", "log", "inv"};
-  private String[] comparisonOperators = {"<", ">", "<=", ">="};
-  private String[] multiOperators = {"&&", "||"};
+  private final String[] binaryOperators = {"+", "-", "*", "pow"};
+  private final String[] unaryOperators = {"cos", "sin", "atan", "exp", "log", "inv"};
+  private final String[] comparisonOperators = {"<", ">", "<=", ">="};
+  private final String[] multiOperators = {"&&", "||"};
 
   public abstract void restructure(int depth);
 

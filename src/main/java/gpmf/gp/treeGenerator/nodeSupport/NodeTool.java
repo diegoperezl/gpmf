@@ -11,7 +11,7 @@ public class NodeTool {
   private boolean hasCondition;
   private HashMap<String, Double> factorsValues;
   private String[] factors;
-  private int numFactors;
+  private final int numFactors;
 
   private double result = 1;
   private boolean printFirstResult = false;
@@ -124,7 +124,7 @@ public class NodeTool {
   }
 
   public void setFactorsValues(double[] factorsParam) {
-    this.factorsValues = new HashMap<String, Double>();
+    this.factorsValues = new HashMap<>();
     for (int i = 0; i < factorsParam.length / 2; i++) {
       this.factorsValues.put("pu" + i, factorsParam[i]);
     }
@@ -169,7 +169,7 @@ public class NodeTool {
 
   public String selectExpression(int depth) {
     double expressionNodeSelection = this.getRandom().nextDouble();
-    String expressionNodeTypeSelection = null;
+    String expressionNodeTypeSelection;
 
     double constantProb = (0.3333 + 0.0666 * depth);
     double restProb = (0.3333 - 0.0666 * depth);
@@ -188,7 +188,7 @@ public class NodeTool {
 
   public String selectConditionExpression() {
     double conditionNodeSelection = this.getRandom().nextDouble();
-    String conditionNodeTypeSelection = null;
+    String conditionNodeTypeSelection;
 
     if (conditionNodeSelection <= 0.80) conditionNodeTypeSelection = "ComparisonExpression";
     else if (conditionNodeSelection > 0.80 && conditionNodeSelection <= 0.85)

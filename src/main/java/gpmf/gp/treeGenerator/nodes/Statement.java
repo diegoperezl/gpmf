@@ -44,9 +44,9 @@ public class Statement extends Node {
 
   @Override
   public void expand() {
-    if (this.getNodeType() == "IFStmt") {
+    if (this.getNodeType().equals("IFStmt")) {
       ifStmtExpand();
-    } else if (this.getNodeType() == "AssignStmt") {
+    } else if (this.getNodeType().equals("AssignStmt")) {
       assignStmtExpand();
     }
   }
@@ -136,7 +136,7 @@ public class Statement extends Node {
   @Override
   public String getPrefix(String currentPrefix) {
     String res = currentPrefix;
-    if (this.getNodeType() == "IFStmt") {
+    if (this.getNodeType().equals("IFStmt")) {
       if (this.getConditionNode() != null) {
         if (this.getConditionNode().eval() == 0.0) {
           if (this.getLeftNode() != null) res = this.getLeftNode().getPrefix(res);
@@ -145,7 +145,7 @@ public class Statement extends Node {
         }
       }
       if (this.nextNode != null) res = this.nextNode.getPrefix("") + " " + res;
-    } else if (this.getNodeType() == "AssignStmt") {
+    } else if (this.getNodeType().equals("AssignStmt")) {
       if (this.getRightNode() != null) {
         if (!this.getNodeTool().getPrintFirstResult()) {
           res = this.getOperator().getValue() + " One " + this.getRightNode().getPrefix(res);
@@ -184,17 +184,17 @@ public class Statement extends Node {
 
   @Override
   public TreeElement clone(NodeTool nodeTool) {
-    Node aux = new Statement(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
+    Statement aux = new Statement(this.getNodeType(), this.getDepth(), this.getParent(), nodeTool);
     aux.setNodeNumber(this.getNodeNumber());
 
     if (this.getOperator() != null)
-      ((Statement) aux).setOperator((Leaf) this.getOperator().clone(nodeTool));
+      aux.setOperator((Leaf) this.getOperator().clone(nodeTool));
     if (this.getConditionNode() != null)
-      ((Statement) aux).setConditionNode((Node) this.getConditionNode().clone(nodeTool));
+      aux.setConditionNode((Node) this.getConditionNode().clone(nodeTool));
     if (this.getRightNode() != null) aux.setRightNode((Node) this.getRightNode().clone(nodeTool));
     if (this.getLeftNode() != null) aux.setLeftNode((Node) this.getLeftNode().clone(nodeTool));
     if (this.nextNode != null)
-      ((Statement) aux).setNextNode((Node) this.getNextNode().clone(nodeTool));
+      aux.setNextNode((Node) this.getNextNode().clone(nodeTool));
 
     return aux;
   }
@@ -209,7 +209,7 @@ public class Statement extends Node {
       this.getNodeTool().addNodeNumber();
       this.getLeftNode().restructure(depth + 1);
     }
-    if (this.getConditionNode() != null && this.getNodeType() != "AssignStmt") {
+    if (this.getConditionNode() != null && !this.getNodeType().equals("AssignStmt")) {
       super.getNodeTool().setHasCondition(true);
       this.getNodeTool().addNodeNumber();
       this.getConditionNode().restructure(depth + 1);
@@ -227,7 +227,7 @@ public class Statement extends Node {
   @Override
   public void setNode(Node node, int nodeNumber) {
     boolean found = false;
-    if (this.getLeftNode() != null && !found) {
+    if (this.getLeftNode() != null) {
       if (this.getLeftNode().getNodeNumber() == nodeNumber) {
         this.setLeftNode((Node) node.clone(this.getNodeTool()));
         found = true;
@@ -235,7 +235,7 @@ public class Statement extends Node {
         this.getLeftNode().setNode(node, nodeNumber);
       }
     }
-    if (this.getConditionNode() != null && !found && this.getNodeType() != "AssignStmt") {
+    if (this.getConditionNode() != null && !found && !this.getNodeType().equals("AssignStmt")) {
       if (this.getConditionNode().getNodeNumber() == nodeNumber) {
         this.setConditionNode((Node) node.clone(this.getNodeTool()));
         found = true;
@@ -254,7 +254,6 @@ public class Statement extends Node {
     if (this.nextNode != null && !found) {
       if (this.nextNode.getNodeNumber() == nodeNumber) {
         this.setNextNode((Node) node.clone(this.getNodeTool()));
-        found = true;
       } else {
         this.nextNode.setNode(node, nodeNumber);
       }
@@ -264,7 +263,7 @@ public class Statement extends Node {
   @Override
   public Node getNode(int nodeNumber) {
     Node node = null;
-    Node auxNode = null;
+    Node auxNode;
     boolean found = false;
 
     if (this.getNodeNumber() == nodeNumber) {
@@ -278,7 +277,7 @@ public class Statement extends Node {
         found = true;
       }
     }
-    if (this.getConditionNode() != null && !found && this.getNodeType() != "AssignStmt") {
+    if (this.getConditionNode() != null && !found && !this.getNodeType().equals("AssignStmt")) {
       auxNode = this.getConditionNode().getNode(nodeNumber);
       if (auxNode != null) {
         node = auxNode;
@@ -296,7 +295,6 @@ public class Statement extends Node {
       auxNode = this.nextNode.getNode(nodeNumber);
       if (auxNode != null) {
         node = auxNode;
-        found = true;
       }
     }
 
@@ -312,7 +310,7 @@ public class Statement extends Node {
   public String toString() {
     String res = "";
 
-    if (this.getNodeType() == "IFStmt") {
+    if (this.getNodeType().equals("IFStmt")) {
       res += this.getNodeType() + " (" + this.getConditionNode().toString() + "){ ";
       res += this.getLeftNode().toString();
       res += "}";
@@ -322,7 +320,7 @@ public class Statement extends Node {
         res += "}";
       }
       if (this.nextNode != null) res += this.nextNode.toString();
-    } else if (this.getNodeType() == "AssignStmt") {
+    } else if (this.getNodeType().equals("AssignStmt")) {
       res +=
           "result " + this.getOperator().toString() + "= " + this.getRightNode().toString() + "; ";
       if (this.nextNode != null) res += this.nextNode.toString();

@@ -17,22 +17,18 @@ import javax.imageio.ImageIO;
 import java.io.File;
 
 public class DrawTree extends Application {
-  private static Pane canvas = new Pane();
+  private static final Pane canvas = new Pane();
   private static Tree treeInstance;
 
   @Override
-  public void start(Stage stage) throws Exception {
+  public void start(Stage stage) {
 
     canvas.setStyle("-fx-background-color: white;");
-
-    Rectangle2D screenBounds = Screen.getPrimary().getBounds();
 
     treeInstance.reset();
     treeInstance.restructure();
 
     int[] silhouette = new int[treeInstance.getDepth() + 2];
-
-    for (int i = 0; i < silhouette.length; i++) silhouette[i] = 0;
 
     treeInstance.draw(canvas, 0, 0, 0, 50, silhouette);
 
@@ -51,7 +47,7 @@ public class DrawTree extends Application {
 
     try {
       ImageIO.write(SwingFXUtils.fromFXImage(wim, null), "png", file);
-    } catch (Exception s) {
+    } catch (Exception ignored) {
     }
 
     Platform.exit();

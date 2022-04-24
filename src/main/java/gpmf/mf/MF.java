@@ -24,25 +24,25 @@ public class MF extends Recommender {
   private final int numFactors;
 
   /** Number of iterations * */
-  private int numIters;
+  private final int numIters;
 
   /** Tree instance * */
-  private Tree treeInstance;
+  private final Tree treeInstance;
 
   /** SymFunction instance * */
   private SymFunction sf = null;
 
   /** Individual * */
-  private Individual individual;
+  private final Individual individual;
 
   /** User latent factors matrix p * */
-  private double[][] p;
+  private final double[][] p;
 
   /** User latent factors matrix q * */
-  private double[][] q;
+  private final double[][] q;
 
   /** Seed of the model* */
-  private Random seed;
+  private final Random seed;
 
   /**
    * Model constructor from a Map containing the model's hyper-parameters values. Map object must
@@ -139,7 +139,7 @@ public class MF extends Recommender {
                 puSfDiff[k] = this.sf.diff("pu" + k);
                 qiSfDiff[k] = this.sf.diff("qi" + k);
               }
-              if (hasCondition) hasCondition = treeInstance.getNodeTool().getHasCondition();
+              hasCondition = treeInstance.getNodeTool().getHasCondition();
               oldFunc = func;
             }
           }
@@ -207,8 +207,7 @@ public class MF extends Recommender {
       }
     }
 
-    double prediction = this.sf.eval(params);
-    return prediction;
+    return this.sf.eval(params);
   }
 
   public Tree getTree() {

@@ -58,8 +58,8 @@ public class Leaf extends TreeElement {
 
   @Override
   public String getPrefix(String currentPrefix) {
-    String res = currentPrefix;
-    if (this.value == "result") {
+    String res;
+    if (this.value.equals("result")) {
       res = "const " + this.eval();
     } else {
       res = this.value + " ";
@@ -69,7 +69,7 @@ public class Leaf extends TreeElement {
 
   @Override
   public double eval() {
-    double res = 0.0;
+    double res;
     switch (this.value) {
       case "result":
         res = this.nodeTool.getResult();
@@ -93,8 +93,6 @@ public class Leaf extends TreeElement {
 
   @Override
   public String toString() {
-    if ((this.value.charAt(0) == 'p' || this.value.charAt(0) == 'q') && !this.value.equals("pow")) {
-      return this.value;
-    } else return this.value;
+    return this.value;
   }
 }

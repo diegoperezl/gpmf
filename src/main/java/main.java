@@ -12,16 +12,12 @@ public class main {
 
     DataModel datamodel = BenchmarkDataModels.MovieLens100K();
 
-    Map<String, Object> params = new HashMap<String, Object>();
+    Map<String, Object> params = new HashMap<>();
 
-    // params.put("numFactors", 6);
-    // params.put("regularization", 0.095);
-    // params.put("learningRate", 0.001);
     params.put("gens", 150);
     params.put("pbmut", 0.5);
     params.put("pbx", 1.0);
     params.put("popSize", 80);
-    // params.put("numIters", 2);
     params.put("maxDepthInit", 50);
     params.put("maxDepthFinal", 300);
     params.put("maxNodesInit", 50);
