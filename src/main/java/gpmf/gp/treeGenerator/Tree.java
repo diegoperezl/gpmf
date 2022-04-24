@@ -6,128 +6,157 @@ import gpmf.gp.treeGenerator.nodes.Node;
 import gpmf.gp.treeGenerator.nodes.Statement;
 
 import java.util.HashMap;
+import java.util.Random;
 
 public class Tree {
 
-    private int maxDepth;
-    private int numFactors;
-    private int maxNodes;
-    private Node root;
-    private int offspring;
-    private NodeTool nodeTool;
+  private double score;
+  private int maxDepth;
+  private int numFactors;
+  private int maxNodes;
+  private Node root;
+  private int offspring;
+  private NodeTool nodeTool;
+  private Random rand;
 
-    public Tree(int maxDepth, int numFactors, int maxNodes){
-        this.setMaxDepth(maxDepth);
-        this.setNumFactors(numFactors);
-        this.setMaxNodes(maxNodes);
-        this.setRoot(null);
-        this.setOffspring(0);
-    }
+  public Tree(int maxDepth, int numFactors, int maxNodes, Random rand, double score) {
+    this.setMaxDepth(maxDepth);
+    this.setNumFactors(numFactors);
+    this.setMaxNodes(maxNodes);
+    this.setRoot(null);
+    this.setOffspring(0);
+    this.rand = rand;
+    this.score = score;
+  }
 
-    public void generateTree(){
-        this.nodeTool = new NodeTool(this.maxDepth,this.maxNodes,0,this.numFactors);
-        this.root = new Statement("AssignStmt",0, root, nodeTool);
-        root.expand();
-        this.setOffspring(nodeTool.getCurrentNodeNumber());
-        //this.setOffspring(this.getOffspring()+this.getRoot().getOffspring()+1);
-    }
+  public void generateTree() {
+    this.nodeTool = new NodeTool(this.maxDepth, this.maxNodes, 0, this.numFactors, this.rand);
+    this.root = new Statement("AssignStmt", 0, root, nodeTool);
+    root.expand();
+    this.setOffspring(nodeTool.getCurrentNodeNumber());
+  }
 
-    public void regenerate(){
-        this.reset();
-        this.generateTree();
-    }
+  public void regenerate() {
+    this.reset();
+    this.generateTree();
+  }
 
-    public Tree clone(){
-        Tree aux = new Tree(this.getMaxDepth(), this.getNumFactors(), this.getMaxNodes());
-        aux.setNodeTool(this.nodeTool.clone());
-        aux.setOffspring(this.getOffspring());
-        aux.setRoot((Node) this.getRoot().clone(aux.getNodeTool()));
-        return aux;
-    }
+  public Tree clone() {
+    Tree aux =
+        new Tree(
+            this.getMaxDepth(), this.getNumFactors(), this.getMaxNodes(), this.rand, this.score);
+    aux.setNodeTool(this.nodeTool.clone());
+    aux.setOffspring(this.getOffspring());
+    aux.setRoot((Node) this.getRoot().clone(aux.getNodeTool()));
+    return aux;
+  }
 
-    public void setFactorsValues(double[] factorsValues){
-        nodeTool.setFactorsValues(factorsValues);
-    }
+  public int getDepth() {
+    return this.nodeTool.getDepth();
+  }
 
-    public void setFactorsValues(HashMap<String, Double> factorsValues){ nodeTool.setFactorsValues(factorsValues); }
+  public double getScore() {
+    return this.score;
+  }
 
-    public void reset(){
-        nodeTool.reset();
-    }
+  public void setScore(double score) {
+    this.score = score;
+  }
 
-    public void restructure(){
-        nodeTool.setCurrentNodeNumber(0);
-        this.root.restructure(0);
-        this.setOffspring(nodeTool.getCurrentNodeNumber());
-    }
+  public void setFactorsValues(double[] factorsValues) {
+    nodeTool.setFactorsValues(factorsValues);
+  }
 
-    public String getPrefix(){
-        String prefix = root.getPrefix("");
-        return prefix.replaceAll("  "," ");
-    }
+  public void setFactorsValues(HashMap<String, Double> factorsValues) {
+    nodeTool.setFactorsValues(factorsValues);
+  }
 
-    public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette){
-        root.draw(canvas, xStart, yStart, xEnd, yEnd, silhouette);
-    }
+  public void reset() {
+    nodeTool.reset();
+  }
 
-    public void print(){
-        System.out.println(this.root.toString());
-    }
+  public void restructure() {
+    nodeTool.setCurrentNodeNumber(0);
+    nodeTool.setHasCondition(false);
+    this.root.restructure(0);
+    this.setOffspring(nodeTool.getCurrentNodeNumber());
+  }
 
-    public void setMaxDepth(int maxDepth) {
-        this.maxDepth = maxDepth;
-    }
+  public String getPrefix() {
+    String prefix = root.getPrefix("");
+    return prefix.replaceAll("  ", " ");
+  }
 
-    public int getMaxDepth() {
-        return this.maxDepth;
-    }
+  public void draw(Pane canvas, int xStart, int yStart, int xEnd, int yEnd, int[] silhouette) {
+    root.draw(canvas, xStart, yStart, xEnd, yEnd, silhouette);
+  }
 
-    public void setNumFactors(int numFactors) {
-        this.numFactors = numFactors;
-    }
+  public String print() {
+    return this.root.toString();
+  }
 
-    public int getNumFactors() {
-        return this.numFactors;
-    }
+  public void setRand(Random rand) {
+    this.rand = rand;
+  }
 
-    public void setMaxNodes(int maxNodes) {
-        this.maxNodes = maxNodes;
-    }
+  public Random getRand() {
+    return this.rand;
+  }
 
-    public int getMaxNodes() {
-        return this.maxNodes;
-    }
+  public void setMaxDepth(int maxDepth) {
+    this.maxDepth = maxDepth;
+  }
 
-    public void setRoot(Node root) {
-        this.root = root;
-    }
+  public int getMaxDepth() {
+    return this.maxDepth;
+  }
 
-    public Node getRoot() {
-        return this.root;
-    }
+  public void setNumFactors(int numFactors) {
+    this.numFactors = numFactors;
+  }
 
-    public void setOffspring(int offspring) {
-        this.offspring = offspring;
-    }
+  public int getNumFactors() {
+    return this.numFactors;
+  }
 
-    public int getOffspring() {
-        return this.offspring;
-    }
+  public void setMaxNodes(int maxNodes) {
+    this.maxNodes = maxNodes;
+  }
 
-    public void setNodeTool(NodeTool nodeTool) {
-        this.nodeTool = nodeTool;
-    }
+  public int getMaxNodes() {
+    return this.maxNodes;
+  }
 
-    public NodeTool getNodeTool() {
-        return this.nodeTool;
-    }
+  public void setRoot(Node root) {
+    this.root = root;
+  }
 
-    public Node getNode(int numNode) {return root.getNode(numNode);}
+  public Node getRoot() {
+    return this.root;
+  }
 
-    public void setNode(Node node, int numNode) {
-        if(numNode == 0)
-            root = (Node) node.clone(this.getNodeTool());
-        else
-            root.setNode(node, numNode);
-    }
+  public void setOffspring(int offspring) {
+    this.offspring = offspring;
+  }
+
+  public int getOffspring() {
+    return this.offspring;
+  }
+
+  public void setNodeTool(NodeTool nodeTool) {
+    this.nodeTool = nodeTool;
+  }
+
+  public NodeTool getNodeTool() {
+    return this.nodeTool;
+  }
+
+  public Node getNode(int numNode) {
+    return root.getNode(numNode);
+  }
+
+  public void setNode(Node node, int numNode) {
+    if (numNode == 0) root = (Node) node.clone(this.getNodeTool());
+    else root.setNode(node, numNode);
+  }
 }

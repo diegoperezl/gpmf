@@ -1,34 +1,39 @@
 package qualityMeasures.prediction;
 
-import es.upm.etsisi.cf4j.data.TestUser;
 import es.upm.etsisi.cf4j.recommender.Recommender;
-import qualityMeasures.QualityMeasuresGPMF;
+import es.upm.etsisi.cf4j.data.TestUser;
+import qualityMeasures.QualityMeasure;
 
-public class MSE extends QualityMeasuresGPMF {
+/**
+ * Override MSE class of cf4j library. This class calculates the Mean Squared Error (MSE) between
+ * the predictions and the test ratings.
+ *
+ * <p>MSE = &#8721;(&lt;test item rating prediction&gt; - &lt;test item rating&gt;)<sup>2</sup> /
+ * &lt;number of predictions&gt;
+ */
+public class MSE extends QualityMeasure {
 
-    private Recommender recommender;
-    public MSE(Recommender recommender){
-        super(recommender);
-        this.recommender = recommender;
+  /**
+   * Constructor of the class which basically calls the father's one
+   *
+   * @param recommender Recommender instance for which the MSE are going to be computed
+   */
+  public MSE(Recommender recommender) {
+    super(recommender);
+  }
+
+  @Override
+  public double getScore(TestUser testUser, double[] predictions) {
+
+    double sum = 0d;
+    int count = 0;
+
+    for (int pos = 0; pos < testUser.getNumberOfTestRatings(); pos++) {
+      double diff = predictions[pos] - testUser.getTestRatingAt(pos);
+      sum += diff * diff;
+      count++;
     }
 
-    @Override
-    public double getScore () {
-        double sum = 0;
-        int count = 0;
-
-        for (TestUser user : recommender.getDataModel().getTestUsers()) {
-            int userIndex = user.getUserIndex();
-
-            for (int i = 0; i < user.getNumberOfTestRatings(); i++) {
-                int itemIndex = user.getTestItemAt(i);
-                double rating = user.getTestRatingAt(i);
-                double prediction = recommender.predict(userIndex, itemIndex);
-
-                sum += Math.pow(rating - prediction, 2);
-                count++;
-            }
-        }
-        return  sum / count;
-    }
+    return (count == 0) ? Double.NaN : (sum / count);
+  }
 }

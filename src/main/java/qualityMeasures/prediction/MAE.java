@@ -2,60 +2,37 @@ package qualityMeasures.prediction;
 
 import es.upm.etsisi.cf4j.data.TestUser;
 import es.upm.etsisi.cf4j.recommender.Recommender;
-import qualityMeasures.QualityMeasuresGPMF;
+import qualityMeasures.QualityMeasure;
 
-public class MAE extends QualityMeasuresGPMF {
-
-    private Recommender recommender;
-    public MAE(Recommender recommender){
-        super(recommender);
-        this.recommender = recommender;
-    }
-
-    @Override
-    public double getScore() {
-        double sum = 0;
-        int count = 0;
-
-        for (TestUser user: recommender.getDataModel().getTestUsers()) {
-            for (int i = 0; i < user.getNumberOfTestRatings(); i++) {
-                int itemIndex = user.getTestItemAt(i);
-                double rating = user.getTestRatingAt(i);
-                double prediction = recommender.predict(user.getUserIndex(), itemIndex);
-
-                sum += Math.abs(prediction - rating);
-                count++;
-            }
-        }
-        return  sum / count;
-    }
-
-
-/*
-    public double MAE () {
-        double sumTotal = 0;
-        int countTotal = 0;
-
-        for (TestUser testUser: recommender.getDataModel().getTestUsers()) {
-            double sum = 0d;
-            int count = 0;
-
-            for (int i = 0; i < testUser.getNumberOfTestRatings(); i++) {
-                int itemIndex = testUser.getTestItemAt(i);
-
-                double rating = testUser.getTestRatingAt(i);
-                double prediction = this.recommender.predict(testUser.getUserIndex(), itemIndex);
-
-                sum += Math.abs(prediction - rating);
-                count++;
-            }
-
-            sumTotal += sum / count;
-            countTotal++;
-        }
-        return sumTotal / countTotal;
-    }
-
-
+/**
+ * Override MSE class of cf4j library. This class calculates the Mean Squared Error (MSE) between
+ * the predictions and the test ratings.
+ *
+ * <p>MSE = &#8721;(&lt;test item rating prediction&gt; - &lt;test item rating&gt;)<sup>2</sup> /
+ * &lt;number of predictions&gt;
  */
+public class MAE extends QualityMeasure {
+
+  /**
+   * Constructor of the class which basically calls the father's one
+   *
+   * @param recommender Recommender instance for which the MSE are going to be computed
+   */
+  public MAE(Recommender recommender) {
+    super(recommender);
+  }
+
+  @Override
+  public double getScore(TestUser testUser, double[] predictions) {
+
+    double sum = 0d;
+    int count = 0;
+
+    for (int pos = 0; pos < testUser.getNumberOfTestRatings(); pos++) {
+      sum += Math.abs(predictions[pos] - testUser.getTestRatingAt(pos));
+      count++;
+    }
+
+    return (count == 0) ? Double.NaN : (sum / count);
+  }
 }
